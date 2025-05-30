@@ -4,6 +4,7 @@
  */
 
 // ゲーム変数
+// 将来的にGameManagerインスタンスで初期化予定
 let gameManager;
 
 /**
