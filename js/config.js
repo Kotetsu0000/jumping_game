@@ -21,6 +21,7 @@ const PLATFORM_MAX_WIDTH = 200;
 const PLATFORM_HEIGHT = 20;
 const PLATFORM_MIN_HEIGHT = 150;
 const PLATFORM_MAX_HEIGHT = 450;
+// フレーム数単位でのプラットフォーム生成間隔
 const PLATFORM_SPAWN_INTERVAL = 100;
 
 // 色設定
