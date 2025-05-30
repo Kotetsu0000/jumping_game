@@ -1,0 +1,34 @@
+# OS関連ファイル
+.DS_Store
+Thumbs.db
+
+# エディタの設定ファイル
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# 依存関係のディレクトリ
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+
+# ビルド成果物
+dist/
+build/
+
+# 一時ファイル
+.tmp/
+.temp/
+*.log
+*.bak
+
+# 環境変数
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
