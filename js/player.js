@@ -2,5 +2,46 @@
  * プレイヤーキャラクターのクラスを定義するモジュール
  */
 
-// TODO: 将来的にPlayer クラスを実装予定
-// このファイルは現在プロジェクト構造のためのプレースホルダです
+import { PLAYER_SIZE, GRAVITY, PLAYER_JUMP_FORCE, COLOR_PALETTE } from './config.js';
+
+export default class Player {
+    constructor(x, y) {
+        this.initialX = x;
+        this.initialY = y;
+        this.x = x;
+        this.y = y;
+        this.velocity = 0;
+    }
+
+    setup() {
+        // 初期位置と速度を設定
+        this.x = this.initialX;
+        this.y = this.initialY;
+        this.velocity = 0;
+    }
+
+    update() {
+        // 重力を適用
+        this.velocity += GRAVITY;
+        this.y += this.velocity;
+        // 床に当たらない簡易処理（画面下限）
+        if (this.y > height - PLAYER_SIZE / 2) {
+            this.y = height - PLAYER_SIZE / 2;
+            this.velocity = 0;
+        }
+    }
+
+    draw() {
+        fill(COLOR_PALETTE.PLAYER);
+        ellipse(this.x, this.y, PLAYER_SIZE, PLAYER_SIZE);
+    }
+
+    jump() {
+        // ジャンプ処理
+        this.velocity = -PLAYER_JUMP_FORCE;
+    }
+
+    reset() {
+        this.setup();
+    }
+}
