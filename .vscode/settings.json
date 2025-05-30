@@ -24,8 +24,15 @@
                 }
             },
             "playwright": {
-                "command": "npx",
-                "args": ["@playwright/mcp@latest"]
+                "command": "docker",
+                "args": [
+                    "run",
+                    "-i",
+                    "--rm",
+                    "--init",
+                    "--pull=always",
+                    "mcr.microsoft.com/playwright/mcp"
+                ]
             }
         }
     }
