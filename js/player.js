@@ -1,10 +1,12 @@
 /**
  * プレイヤーキャラクターのクラスを定義するモジュール
  */
-
 import { PLAYER_SIZE, GRAVITY, PLAYER_JUMP_FORCE, COLOR_PALETTE } from './config.js';
 
-export default class Player {
+// p5.js関数へアクセス
+const p5 = window.p5Globals;
+
+export class Player {
     constructor(x, y) {
         this.initialX = x;
         this.initialY = y;
@@ -18,22 +20,18 @@ export default class Player {
         this.x = this.initialX;
         this.y = this.initialY;
         this.velocity = 0;
-    }
-
-    update() {
+    }    update() {
         // 重力を適用
         this.velocity += GRAVITY;
         this.y += this.velocity;
         // 床に当たらない簡易処理（画面下限）
-        if (this.y > height - PLAYER_SIZE / 2) {
-            this.y = height - PLAYER_SIZE / 2;
+        if (this.y > window.height - PLAYER_SIZE / 2) {
+            this.y = window.height - PLAYER_SIZE / 2;
             this.velocity = 0;
         }
-    }
-
-    draw() {
-        fill(COLOR_PALETTE.PLAYER);
-        ellipse(this.x, this.y, PLAYER_SIZE, PLAYER_SIZE);
+    }    draw() {
+        window.fill(COLOR_PALETTE.PLAYER);
+        window.ellipse(this.x, this.y, PLAYER_SIZE, PLAYER_SIZE);
     }
 
     jump() {

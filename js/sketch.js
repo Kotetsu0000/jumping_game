@@ -1,17 +1,20 @@
-import { CANVAS_WIDTH, CANVAS_HEIGHT, COLOR_PALETTE, FONT_SIZE_TITLE, FONT_SIZE_TEXT } from './config.js';
-import GameManager from './game_manager.js';
+// ゲームモジュールのインポート
+import { GameManager } from './game_manager.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, COLOR_PALETTE } from './config.js';
+
+// p5.js関数へアクセス
+const p5 = window.p5Globals;
 
 // ゲーム変数
-// TODO: 将来的にGameManagerインスタンスで初期化予定
 let gameManager;
 
 /**
  * p5.js のセットアップ関数
  * キャンバスの作成と初期化処理を行います
  */
-function setup() {
+window.setup = function() {
     // キャンバスを作成
-    createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    window.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // GameManager の初期化
     gameManager = new GameManager();
@@ -22,9 +25,9 @@ function setup() {
  * p5.js のドロー関数（メインループ）
  * フレームごとに呼び出され、ゲームの状態を更新し描画します
  */
-function draw() {
+window.draw = function() {
     // 背景描画
-    background(COLOR_PALETTE.BACKGROUND);
+    window.background(COLOR_PALETTE.BACKGROUND);
     // ゲーム状態更新と描画
     gameManager.update();
     gameManager.draw();
@@ -33,7 +36,7 @@ function draw() {
 /**
  * キーが押された時の処理
  */
-function keyPressed() {
+window.keyPressed = function() {
     if (gameManager) {
         gameManager.keyPressed(key);
     }
@@ -42,7 +45,7 @@ function keyPressed() {
 /**
  * マウスがクリックされた時の処理
  */
-function mousePressed() {
+window.mousePressed = function() {
     if (gameManager) {
         gameManager.mousePressed();
     }

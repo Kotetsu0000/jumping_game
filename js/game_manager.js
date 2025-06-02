@@ -2,12 +2,14 @@
  * ゲーム状態管理を担当するモジュール
  * ゲームの状態、スコア、UI表示を管理します
  */
+import { Player } from './player.js';
+import { StageGenerator } from './stage_generator.js';
+import { GAME_STATE, INITIAL_PLAYER_X, INITIAL_PLAYER_Y, COLOR_PALETTE, FONT_SIZE_TITLE, FONT_SIZE_TEXT } from './config.js';
 
-import { GAME_STATE, COLOR_PALETTE, FONT_SIZE_TITLE, FONT_SIZE_TEXT, INITIAL_PLAYER_X, INITIAL_PLAYER_Y } from './config.js';
-import Player from './player.js';
-import StageGenerator from './stage_generator.js';
+// p5.js関数へアクセス
+const p5 = window.p5Globals;
 
-export default class GameManager {
+export class GameManager {
     constructor() {
         this.state = GAME_STATE.START;
         this.score = 0;
@@ -26,24 +28,28 @@ export default class GameManager {
             this.player.update();
             this.score++;
         }
-    }
-
-    draw() {
+    }    draw() {
         this.stageGenerator.draw();
         this.player.draw();
-        fill(COLOR_PALETTE.TEXT);
-        textSize(FONT_SIZE_TITLE);
-        textAlign(CENTER, CENTER);
-        if (this.state === GAME_STATE.START) {
-            text('ジャンピングゲーム', width / 2, height / 3);
-            textSize(FONT_SIZE_TEXT);
-            text('スペースキーまたはクリックでスタート', width / 2, height / 2 + 50);
-        } else if (this.state === GAME_STATE.PLAYING) {
-            text(`Score: ${this.score}`, width - 100, 50);
+        window.fill(COLOR_PALETTE.TEXT);
+        window.textSize(FONT_SIZE_TITLE);
+        window.textAlign(window.CENTER, window.CENTER);        if (this.state === GAME_STATE.START) {
+            window.text('ジャンピングゲーム', window.width / 2, window.height / 3);
+            window.textSize(FONT_SIZE_TEXT);
+            window.text(
+                'スペースキーまたはクリックでスタート',
+                window.width / 2,
+                window.height / 2 + 50
+            );        } else if (this.state === GAME_STATE.PLAYING) {
+            window.text(`Score: ${this.score}`, window.width - 100, 50);
         } else if (this.state === GAME_STATE.GAME_OVER) {
-            text('ゲームオーバー', width / 2, height / 3);
-            textSize(FONT_SIZE_TEXT);
-            text('スペースキーまたはクリックでリトライ', width / 2, height / 2 + 50);
+            window.text('ゲームオーバー', window.width / 2, window.height / 3);
+            window.textSize(FONT_SIZE_TEXT);
+            window.text(
+                'スペースキーまたはクリックでリトライ',
+                window.width / 2,
+                window.height / 2 + 50
+            );
         }
     }
 

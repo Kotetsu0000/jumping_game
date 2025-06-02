@@ -4,14 +4,16 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>ジャンピングゲーム</title>
-        <!-- 基本スタイルシート -->
-        <link rel="stylesheet" href="css/style.css" />
-        <script src="js/p5.min.js" defer></script>
+        <!-- 基本スタイルシート -->        <link rel="stylesheet" href="css/style.css" />
+        <script src="js/p5.min.js"></script>
+        <!-- planck.js - p5.playの依存ライブラリ -->
+        <script src="js/planck.min.js"></script>
         <!-- p5.play ライブラリ -->
-        <script src="js/p5.play.js" defer></script>
-    </head>
-    <body>
-        <!-- Javascriptファイル -->
+        <script src="js/p5.play.js"></script>
+        <!-- グローバル変数をエクスポートするヘルパースクリプト -->
+        <script src="js/p5_globals.js"></script>
+        <!-- メインスケッチファイル（モジュールとして読み込み） -->
         <script type="module" src="js/sketch.js"></script>
-    </body>
+    </head>
+    <body></body>
 </html>
