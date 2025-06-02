@@ -19,13 +19,14 @@ export class Player {
         this.y = y;
         this.velocity = 0;
     }
-    
-    setup() {
+      setup() {
         // 初期位置と速度を設定
         this.x = this.initialX;
         this.y = this.initialY;
         this.velocity = 0;
-    }    update() {
+    }
+    
+    update() {
         // 重力を適用
         this.velocity += GRAVITY;
         this.y += this.velocity;

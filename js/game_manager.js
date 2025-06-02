@@ -22,18 +22,19 @@ export class GameManager {
         this.score = 0;
         this.player = new Player(INITIAL_PLAYER_X, INITIAL_PLAYER_Y);
         this.stageGenerator = new StageGenerator();
-    }
-
-    setup() {
+    }    setup() {
         this.player.setup();
         this.stageGenerator.setup();
-    }    update() {
+    }
+    
+    update() {
         if (this.state === GAME_STATE.PLAYING) {
             this.stageGenerator.update();
-            this.player.update();
-            this.score++;
+            this.player.update();            this.score++;
         }
-    }    draw() {
+    }
+    
+    draw() {
         this.stageGenerator.draw();
         this.player.draw();
         
