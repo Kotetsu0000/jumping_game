@@ -4,6 +4,9 @@
             "text": "GitHub MCP Serverでは owner:kotetsu0000, repo:jumping_gameを利用します。"
         },
         {
+            "text": "複数のコマンドを同時に実行する際は、セミコロン `;` を使用してコマンドを区切ります。例: `git add .; git commit -m 'Update files'; git push`"
+        },
+        {
             "text": "ブランチ戦略: `main` ブランチは常に最新の状態を保ち、安定版として扱います。直接コミットは禁止。フィーチャーブランチは新機能実装の場合は`feature/[issue番号]-[短い説明]` (例: `feature/001-player-jump`)、バグ修正の場合は`fix/[issue番号]-[短い説明]` (例: `fix/002-score-display-error`)、リファクタリング等の場合は`refactor/[issue番号]-[短い説明]` (例: `refactor/003-code-cleanup`)と命名します。"
         },
         {

@@ -16,7 +16,8 @@ import {
 // p5.js関数へアクセス
 const p5 = window.p5Globals;
 
-export class GameManager {    constructor() {
+export class GameManager {
+    constructor() {
         this.state = GAME_STATE.START;
         this.score = 0;
         this.player = new Player(INITIAL_PLAYER_X, INITIAL_PLAYER_Y);
@@ -67,7 +68,8 @@ export class GameManager {    constructor() {
                 window.height / 2 + 50
             );
         }
-    }    keyPressed(key) {
+    }
+    keyPressed(key) {
         if (this.state === GAME_STATE.START) {
             this.startGame();
         } else if (this.state === GAME_STATE.PLAYING) {
