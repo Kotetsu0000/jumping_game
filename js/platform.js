@@ -13,16 +13,16 @@ export class Platform {
         this.width = width;
         this.height = PLATFORM_HEIGHT;
         this.speed = PLATFORM_SPEED;
-    }
-
-    /** 初期化処理（必要に応じて） */
+    }    /** 初期化処理（必要に応じて） */
     setup() {
         // 現在は追加処理なし
-    }    /** プラットフォームの移動を更新 */
+    }
+
+    /** プラットフォームの移動を更新 */
     update() {
         this.x -= this.speed;
     }
-    
+
     /** プラットフォームを描画 */
     draw() {
         window.fill(COLOR_PALETTE.PLATFORM);

@@ -4,7 +4,14 @@
  */
 import { Player } from './player.js';
 import { StageGenerator } from './stage_generator.js';
-import { GAME_STATE, INITIAL_PLAYER_X, INITIAL_PLAYER_Y, COLOR_PALETTE, FONT_SIZE_TITLE, FONT_SIZE_TEXT } from './config.js';
+import {
+    GAME_STATE,
+    INITIAL_PLAYER_X,
+    INITIAL_PLAYER_Y,
+    COLOR_PALETTE,
+    FONT_SIZE_TITLE,
+    FONT_SIZE_TEXT,
+} from './config.js';
 
 // p5.js関数へアクセス
 const p5 = window.p5Globals;
@@ -25,22 +32,29 @@ export class GameManager {
     update() {
         if (this.state === GAME_STATE.PLAYING) {
             this.stageGenerator.update();
-            this.player.update();
-            this.score++;
+            this.player.update();            this.score++;
         }
-    }    draw() {
+    }
+
+    draw() {
         this.stageGenerator.draw();
-        this.player.draw();
-        window.fill(COLOR_PALETTE.TEXT);
+        this.player.draw();        window.fill(COLOR_PALETTE.TEXT);
         window.textSize(FONT_SIZE_TITLE);
-        window.textAlign(window.CENTER, window.CENTER);        if (this.state === GAME_STATE.START) {
-            window.text('ジャンピングゲーム', window.width / 2, window.height / 3);
+        window.textAlign(window.CENTER, window.CENTER);
+        
+        if (this.state === GAME_STATE.START) {
+            window.text(
+                'ジャンピングゲーム',
+                window.width / 2,
+                window.height / 3
+            );
             window.textSize(FONT_SIZE_TEXT);
             window.text(
                 'スペースキーまたはクリックでスタート',
                 window.width / 2,
                 window.height / 2 + 50
-            );        } else if (this.state === GAME_STATE.PLAYING) {
+            );
+        } else if (this.state === GAME_STATE.PLAYING) {
             window.text(`Score: ${this.score}`, window.width - 100, 50);
         } else if (this.state === GAME_STATE.GAME_OVER) {
             window.text('ゲームオーバー', window.width / 2, window.height / 3);
