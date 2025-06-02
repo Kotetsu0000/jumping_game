@@ -19,6 +19,7 @@ export class Player {
         this.y = y;
         this.velocity = 0;
     }
+
     setup() {
         // 初期位置と速度を設定
         this.x = this.initialX;
