@@ -17,7 +17,9 @@ const p5 = window.p5Globals;
 export class StageGenerator {
     constructor() {
         this.platforms = [];
-    }    setup() {
+    }
+    
+    setup() {
         this.platforms = [];
     }
 

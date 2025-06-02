@@ -22,5 +22,5 @@ window.p5Globals = {
     mousePressed: window.mousePressed,
     // その他必要な関数やプロパティ
     CENTER: window.CENTER,
-    key: window.key
+    key: window.key,
 };

@@ -27,18 +27,17 @@ export class GameManager {
     setup() {
         this.player.setup();
         this.stageGenerator.setup();
-    }
-
-    update() {
+    }    update() {
         if (this.state === GAME_STATE.PLAYING) {
             this.stageGenerator.update();
-            this.player.update();            this.score++;
+            this.player.update();
+            this.score++;
         }
-    }
-
-    draw() {
+    }    draw() {
         this.stageGenerator.draw();
-        this.player.draw();        window.fill(COLOR_PALETTE.TEXT);
+        this.player.draw();
+        
+        window.fill(COLOR_PALETTE.TEXT);
         window.textSize(FONT_SIZE_TITLE);
         window.textAlign(window.CENTER, window.CENTER);
         
