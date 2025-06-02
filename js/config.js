@@ -4,28 +4,28 @@
  */
 
 // キャンバスサイズ
-const CANVAS_WIDTH = 800;
-const CANVAS_HEIGHT = 600;
+export const CANVAS_WIDTH = 800;
+export const CANVAS_HEIGHT = 600;
 
 // プレイヤー設定
-const PLAYER_SIZE = 30;
-const PLAYER_JUMP_FORCE = 15;
-const GRAVITY = 0.8;
-const INITIAL_PLAYER_X = 200;
-const INITIAL_PLAYER_Y = 300;
+export const PLAYER_SIZE = 30;
+export const PLAYER_JUMP_FORCE = 15;
+export const GRAVITY = 0.8;
+export const INITIAL_PLAYER_X = 200;
+export const INITIAL_PLAYER_Y = 300;
 
 // プラットフォーム設定
-const PLATFORM_SPEED = 3;
-const PLATFORM_MIN_WIDTH = 100;
-const PLATFORM_MAX_WIDTH = 200;
-const PLATFORM_HEIGHT = 20;
-const PLATFORM_MIN_HEIGHT = 150;
-const PLATFORM_MAX_HEIGHT = 450;
+export const PLATFORM_SPEED = 3;
+export const PLATFORM_MIN_WIDTH = 100;
+export const PLATFORM_MAX_WIDTH = 200;
+export const PLATFORM_HEIGHT = 20;
+export const PLATFORM_MIN_HEIGHT = 150;
+export const PLATFORM_MAX_HEIGHT = 450;
 // フレーム数単位でのプラットフォーム生成間隔
-const PLATFORM_SPAWN_INTERVAL = 100;
+export const PLATFORM_SPAWN_INTERVAL = 100;
 
 // 色設定
-const COLOR_PALETTE = {
+export const COLOR_PALETTE = {
     BACKGROUND: '#87CEEB', // 空色の背景
     PLAYER: '#FF5722', // オレンジ色のプレイヤー
     PLATFORM: '#4CAF50', // 緑色の足場
@@ -34,13 +34,13 @@ const COLOR_PALETTE = {
 };
 
 // ゲーム状態
-const GAME_STATE = {
+export const GAME_STATE = {
     START: 'start',
     PLAYING: 'playing',
     GAME_OVER: 'gameOver',
 };
 
 // フォント設定
-const FONT_SIZE_SCORE = 24;
-const FONT_SIZE_TITLE = 48;
-const FONT_SIZE_TEXT = 18;
+export const FONT_SIZE_SCORE = 24;
+export const FONT_SIZE_TITLE = 48;
+export const FONT_SIZE_TEXT = 18;

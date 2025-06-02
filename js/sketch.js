@@ -1,60 +1,51 @@
-/**
- * メインスケッチファイル
- * p5.jsのセットアップと描画ループを含みます
- */
+// ゲームモジュールのインポート
+import { GameManager } from './game_manager.js';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, COLOR_PALETTE } from './config.js';
+
+// p5.js関数は window経由で直接アクセスする
 
 // ゲーム変数
-// TODO: 将来的にGameManagerインスタンスで初期化予定
 let gameManager;
 
 /**
  * p5.js のセットアップ関数
  * キャンバスの作成と初期化処理を行います
  */
-function setup() {
+window.setup = function () {
     // キャンバスを作成
-    createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+    window.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // テスト描画のための一時的なコード
-    // 最終的にはGameManagerクラスでゲーム管理を行います
-}
+    // GameManager の初期化
+    gameManager = new GameManager();
+    gameManager.setup();
+};
 
 /**
  * p5.js のドロー関数（メインループ）
  * フレームごとに呼び出され、ゲームの状態を更新し描画します
  */
-function draw() {
-    // 背景を描画
-    background(COLOR_PALETTE.BACKGROUND);
-
-    // テスト描画のための一時的なコード
-    fill(COLOR_PALETTE.PLAYER);
-    ellipse(width / 2, height / 2, PLAYER_SIZE, PLAYER_SIZE);
-
-    // テキスト表示テスト
-    fill(COLOR_PALETTE.TEXT);
-    textSize(FONT_SIZE_TITLE);
-    textAlign(CENTER, CENTER);
-    text('ジャンピングゲーム', width / 2, height / 3);
-
-    textSize(FONT_SIZE_TEXT);
-    text('スペースキーまたはクリックでスタート', width / 2, height / 2 + 100);
-}
+window.draw = function () {
+    // 背景描画
+    window.background(COLOR_PALETTE.BACKGROUND);
+    // ゲーム状態更新と描画
+    gameManager.update();
+    gameManager.draw();
+};
 
 /**
  * キーが押された時の処理
  */
-function keyPressed() {
-    if (key === ' ') {
-        // スペースキーが押された時の処理
-        console.log('スペースキーが押されました');
+window.keyPressed = function () {
+    if (gameManager) {
+        gameManager.keyPressed();
     }
-}
+};
 
 /**
  * マウスがクリックされた時の処理
  */
-function mousePressed() {
-    // マウスクリック時の処理
-    console.log('マウスがクリックされました');
-}
+window.mousePressed = function () {
+    if (gameManager) {
+        gameManager.mousePressed();
+    }
+};

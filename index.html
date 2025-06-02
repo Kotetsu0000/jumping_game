@@ -6,27 +6,15 @@
         <title>ジャンピングゲーム</title>
         <!-- 基本スタイルシート -->
         <link rel="stylesheet" href="css/style.css" />
-        <script
-            src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"
-            integrity="sha512-uaz5GpnQoE6t5echKlX8P52czvsIGgLPcvlzfvRHLtjLBDQhzk0YT5HV4I+MzMlAcR9PDUVf3/LCU+zP5izlIg=="
-            crossorigin="anonymous"
-            defer
-        ></script>
+        <script src="js/p5.min.js"></script>
+        <!-- planck.js - p5.playの依存ライブラリ -->
+        <script src="js/planck.min.js"></script>
         <!-- p5.play ライブラリ -->
-        <script
-            src="https://cdn.jsdelivr.net/npm/p5.play@3.6.2/p5.play.js"
-            integrity="sha512-qQ9Uu2nFB8CiYOOVxHKJbgO0Ph/vsLLXjfvEAUga9JWl80N3gIT7p1lGX9SSuUh/aMJN+UdUZ/ujy+hoLbXJA=="
-            crossorigin="anonymous"
-            defer
-        ></script>
+        <script src="js/p5.play.js"></script>
+        <!-- グローバル変数をエクスポートするヘルパースクリプト -->
+        <script src="js/p5_globals.js"></script>
+        <!-- メインスケッチファイル（モジュールとして読み込み） -->
+        <script type="module" src="js/sketch.js"></script>
     </head>
-    <body>
-        <!-- Javascriptファイル -->
-        <script src="js/config.js" defer></script>
-        <script src="js/player.js" defer></script>
-        <script src="js/platform.js" defer></script>
-        <script src="js/stage_generator.js" defer></script>
-        <script src="js/game_manager.js" defer></script>
-        <script src="js/sketch.js" defer></script>
-    </body>
+    <body></body>
 </html>
