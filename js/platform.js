@@ -14,7 +14,7 @@ export class Platform {
         this.height = PLATFORM_HEIGHT;
         this.speed = PLATFORM_SPEED;
     }
-    
+
     /** 初期化処理（必要に応じて） */
     setup() {
         // 現在は追加処理なし

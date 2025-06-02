@@ -18,7 +18,7 @@ export class StageGenerator {
     constructor() {
         this.platforms = [];
     }
-    
+
     setup() {
         this.platforms = [];
     }

@@ -19,13 +19,13 @@ export class Player {
         this.y = y;
         this.velocity = 0;
     }
-      setup() {
+    setup() {
         // 初期位置と速度を設定
         this.x = this.initialX;
         this.y = this.initialY;
         this.velocity = 0;
     }
-    
+
     update() {
         // 重力を適用
         this.velocity += GRAVITY;
@@ -36,7 +36,7 @@ export class Player {
             this.velocity = 0;
         }
     }
-    
+
     draw() {
         window.fill(COLOR_PALETTE.PLAYER);
         window.ellipse(this.x, this.y, PLAYER_SIZE, PLAYER_SIZE);

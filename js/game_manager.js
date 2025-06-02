@@ -22,26 +22,28 @@ export class GameManager {
         this.score = 0;
         this.player = new Player(INITIAL_PLAYER_X, INITIAL_PLAYER_Y);
         this.stageGenerator = new StageGenerator();
-    }    setup() {
+    }
+    setup() {
         this.player.setup();
         this.stageGenerator.setup();
     }
-    
+
     update() {
         if (this.state === GAME_STATE.PLAYING) {
             this.stageGenerator.update();
-            this.player.update();            this.score++;
+            this.player.update();
+            this.score++;
         }
     }
-    
+
     draw() {
         this.stageGenerator.draw();
         this.player.draw();
-        
+
         window.fill(COLOR_PALETTE.TEXT);
         window.textSize(FONT_SIZE_TITLE);
         window.textAlign(window.CENTER, window.CENTER);
-        
+
         if (this.state === GAME_STATE.START) {
             window.text(
                 'ジャンピングゲーム',
