@@ -28,8 +28,6 @@ export class GameManager {
 
     /**
      * ゲームの初期設定を行う
-     */ /**
-     * ゲームの初期設定を行う
      */
     setup() {
         this.player.setup();
@@ -38,15 +36,29 @@ export class GameManager {
 
     /**
      * ゲームの状態を更新する
-     */ /**
-     * ゲームの状態を更新する
      */
     update() {
         if (this.state === GAME_STATE.PLAYING) {
             this.stageGenerator.update();
-            this.player.update();
-            this.score++;
+            // プレイヤー更新処理に足場の配列を渡す
+            this.player.update(this.stageGenerator.platforms);
+
+            // ゲームオーバー判定
+            if (this.isGameOver()) {
+                this.state = GAME_STATE.GAME_OVER;
+            } else {
+                this.score++;
+            }
         }
+    }
+
+    /**
+     * ゲームオーバー判定
+     * @returns {boolean} ゲームオーバーの場合true
+     */
+    isGameOver() {
+        // プレイヤーが画面下限を超えた場合、ゲームオーバー
+        return this.player.y > window.height + 100;
     }
 
     /**
@@ -78,6 +90,11 @@ export class GameManager {
             window.text('ゲームオーバー', window.width / 2, window.height / 3);
             window.textSize(FONT_SIZE_TEXT);
             window.text(
+                `Score: ${this.score}`,
+                window.width / 2,
+                window.height / 2
+            );
+            window.text(
                 'スペースキーまたはクリックでリトライ',
                 window.width / 2,
                 window.height / 2 + 50
@@ -91,7 +108,11 @@ export class GameManager {
         if (this.state === GAME_STATE.START) {
             this.startGame();
         } else if (this.state === GAME_STATE.PLAYING) {
-            this.player.jump();
+            // スペースキーが押された場合ジャンプ
+            if (window.keyCode === 32) {
+                // 32はスペースキーのキーコード
+                this.player.jump();
+            }
         } else if (this.state === GAME_STATE.GAME_OVER) {
             this.resetGame();
         }

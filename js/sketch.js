@@ -15,6 +15,9 @@ window.setup = function () {
     // キャンバスを作成
     window.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
 
+    // p5.playの設定
+    window.world.gravity.y = 0; // 物理エンジンの重力はオフ（独自処理で実装）
+
     // GameManager の初期化
     gameManager = new GameManager();
     gameManager.setup();
