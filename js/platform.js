@@ -3,8 +3,7 @@
  */
 import { PLATFORM_HEIGHT, PLATFORM_SPEED, COLOR_PALETTE } from './config.js';
 
-// p5.js関数へアクセス
-const p5 = window.p5Globals;
+// p5.js関数は window.p5Globals 経由で直接アクセス
 
 export class Platform {
     constructor(x, y, width) {

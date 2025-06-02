@@ -13,8 +13,7 @@ import {
     FONT_SIZE_TEXT,
 } from './config.js';
 
-// p5.js関数へアクセス
-const p5 = window.p5Globals;
+// p5.js関数は window.p5Globals 経由で直接アクセス
 
 export class GameManager {
     constructor() {
@@ -69,6 +68,7 @@ export class GameManager {
             );
         }
     }
+
     keyPressed(key) {
         if (this.state === GAME_STATE.START) {
             this.startGame();
@@ -78,9 +78,8 @@ export class GameManager {
             this.resetGame();
         }
     }
-
     mousePressed() {
-        // マウスクリック時の処理をkeyPressed()メソッドと同等の処理として実行
+        // マウス入力時の処理を明示的に実装
         if (this.state === GAME_STATE.START) {
             this.startGame();
         } else if (this.state === GAME_STATE.PLAYING) {

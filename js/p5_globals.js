@@ -12,11 +12,16 @@ window.p5Globals = {
     text: window.text,
     textAlign: window.textAlign,
     textSize: window.textSize,
-    random: window.random,
-    // プロパティ
-    width: window.width,
-    height: window.height,
-    frameCount: window.frameCount,
+    random: window.random, // プロパティ（ゲッターで常に最新の値を返す）
+    get width() {
+        return window.width;
+    },
+    get height() {
+        return window.height;
+    },
+    get frameCount() {
+        return window.frameCount;
+    },
     // イベント関数
     keyPressed: window.keyPressed,
     mousePressed: window.mousePressed,
