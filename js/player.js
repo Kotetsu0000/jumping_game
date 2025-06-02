@@ -41,12 +41,12 @@ export class Player {
         // プレイヤーキャラクターの見た目をドット絵風に
         this.sprite.shape = 'box';
         this.sprite.collider = 'dynamic';
-        this.sprite.rotationLock = true;        // p5.playでは画像ベースのアニメーションがデフォルトですが、
+        this.sprite.rotationLock = true; // p5.playでは画像ベースのアニメーションがデフォルトですが、
         // 単純な図形でプレイヤーを表現します
         this.sprite.width = PLAYER_SIZE;
         this.sprite.height = PLAYER_SIZE;
         this.sprite.color = COLOR_PALETTE.PLAYER;
-        
+
         // ジャンプアニメーション用の状態変数
         this.isJumping = false;
     }
@@ -68,7 +68,7 @@ export class Player {
         this.grounded = false;
 
         // 足場との衝突判定
-        this.checkCollision(platforms);        // アニメーション状態を更新
+        this.checkCollision(platforms); // アニメーション状態を更新
         if (!this.grounded) {
             this.isJumping = true;
             // ジャンプ中は少し縦に短くする
@@ -156,7 +156,7 @@ export class Player {
         this.x = this.initialX;
         this.y = this.initialY;
         this.velocity = 0;
-        this.grounded = false;        // Spriteがすでに存在する場合は位置をリセット
+        this.grounded = false; // Spriteがすでに存在する場合は位置をリセット
         if (this.sprite) {
             this.sprite.x = this.x;
             this.sprite.y = this.y;
