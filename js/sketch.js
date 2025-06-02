@@ -2,7 +2,7 @@
 import { GameManager } from './game_manager.js';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, COLOR_PALETTE } from './config.js';
 
-// p5.js関数は window.p5Globals 経由で直接アクセスするため変数は不要
+// p5.js関数は window経由で直接アクセスする
 
 // ゲーム変数
 let gameManager;
@@ -37,7 +37,7 @@ window.draw = function () {
  */
 window.keyPressed = function () {
     if (gameManager) {
-        gameManager.keyPressed(key);
+        gameManager.keyPressed();
     }
 };
 

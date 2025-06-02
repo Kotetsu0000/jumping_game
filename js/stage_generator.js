@@ -17,11 +17,16 @@ export class StageGenerator {
     constructor() {
         this.platforms = [];
     }
-
+    /**
+     * プラットフォームの初期化処理
+     */
     setup() {
         this.platforms = [];
     }
 
+    /**
+     * プラットフォームの生成と更新を行う
+     */
     update() {
         // 一定間隔でプラットフォームを生成
         if (window.frameCount % PLATFORM_SPAWN_INTERVAL === 0) {
@@ -34,11 +39,16 @@ export class StageGenerator {
         // 画面外のプラットフォームを削除
         this.platforms = this.platforms.filter((p) => !p.isOffScreen());
     }
-
+    /**
+     * すべてのプラットフォームを描画する
+     */
     draw() {
         this.platforms.forEach((p) => p.draw());
     }
 
+    /**
+     * プラットフォームの状態をリセットする
+     */
     reset() {
         this.setup();
     }

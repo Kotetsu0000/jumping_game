@@ -6,6 +6,12 @@ import { PLATFORM_HEIGHT, PLATFORM_SPEED, COLOR_PALETTE } from './config.js';
 // p5.js関数は window.p5Globals 経由で直接アクセス
 
 export class Platform {
+    /**
+     * プラットフォームを初期化する
+     * @param {number} x プラットフォームのX座標
+     * @param {number} y プラットフォームのY座標
+     * @param {number} width プラットフォームの幅
+     */
     constructor(x, y, width) {
         this.x = x;
         this.y = y;

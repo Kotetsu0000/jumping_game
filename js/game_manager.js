@@ -16,6 +16,9 @@ import {
 // p5.js関数は window.p5Globals 経由で直接アクセス
 
 export class GameManager {
+    /**
+     * ゲームマネージャーを初期化する
+     */
     constructor() {
         this.state = GAME_STATE.START;
         this.score = 0;
@@ -23,11 +26,21 @@ export class GameManager {
         this.stageGenerator = new StageGenerator();
     }
 
+    /**
+     * ゲームの初期設定を行う
+     */ /**
+     * ゲームの初期設定を行う
+     */
     setup() {
         this.player.setup();
         this.stageGenerator.setup();
     }
 
+    /**
+     * ゲームの状態を更新する
+     */ /**
+     * ゲームの状態を更新する
+     */
     update() {
         if (this.state === GAME_STATE.PLAYING) {
             this.stageGenerator.update();
@@ -36,6 +49,9 @@ export class GameManager {
         }
     }
 
+    /**
+     * ゲーム画面を描画する
+     */
     draw() {
         this.stageGenerator.draw();
         this.player.draw();
@@ -68,8 +84,10 @@ export class GameManager {
             );
         }
     }
-
-    keyPressed(key) {
+    /**
+     * キー入力処理
+     */
+    keyPressed() {
         if (this.state === GAME_STATE.START) {
             this.startGame();
         } else if (this.state === GAME_STATE.PLAYING) {
@@ -78,6 +96,9 @@ export class GameManager {
             this.resetGame();
         }
     }
+    /**
+     * マウス入力の処理
+     */
     mousePressed() {
         // マウス入力時の処理を明示的に実装
         if (this.state === GAME_STATE.START) {
@@ -89,11 +110,17 @@ export class GameManager {
         }
     }
 
+    /**
+     * ゲームを開始状態にする
+     */
     startGame() {
         this.state = GAME_STATE.PLAYING;
         this.score = 0;
     }
 
+    /**
+     * ゲームをリセットする
+     */
     resetGame() {
         this.state = GAME_STATE.START;
         this.player.reset();

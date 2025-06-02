@@ -11,6 +11,11 @@ import {
 // p5.js関数は window.p5Globals 経由で直接アクセス
 
 export class Player {
+    /**
+     * プレイヤーを初期化する
+     * @param {number} x プレイヤーの初期X座標
+     * @param {number} y プレイヤーの初期Y座標
+     */
     constructor(x, y) {
         this.initialX = x;
         this.initialY = y;
@@ -19,13 +24,18 @@ export class Player {
         this.velocity = 0;
     }
 
+    /**
+     * プレイヤーの初期設定を行う
+     */
     setup() {
         // 初期位置と速度を設定
         this.x = this.initialX;
         this.y = this.initialY;
         this.velocity = 0;
     }
-
+    /**
+     * プレイヤーの状態を更新する
+     */
     update() {
         // 重力を適用
         this.velocity += GRAVITY;
@@ -37,16 +47,27 @@ export class Player {
         }
     }
 
+    /**
+     * プレイヤーを描画する
+     */ /**
+     * プレイヤーを描画する
+     */
     draw() {
         window.fill(COLOR_PALETTE.PLAYER);
         window.ellipse(this.x, this.y, PLAYER_SIZE, PLAYER_SIZE);
     }
 
+    /**
+     * プレイヤーのジャンプ動作を実行する
+     */
     jump() {
         // ジャンプ処理
         this.velocity = -PLAYER_JUMP_FORCE;
     }
 
+    /**
+     * プレイヤーの状態をリセットする
+     */
     reset() {
         this.setup();
     }
