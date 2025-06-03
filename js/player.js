@@ -22,6 +22,9 @@ export class Player {
         this.velocity = 0;
         this.grounded = false;
         this.sprite = null;
+        this.frameCount = 0; // アニメーション用フレームカウンタ
+        this.animationSpeed = 0.1; // アニメーションの速度
+        this.pixelSize = PLAYER_SIZE / 8; // ドット（ピクセル）のサイズ
     }
 
     /**
@@ -32,25 +35,116 @@ export class Player {
         this.x = this.initialX;
         this.y = this.initialY;
         this.velocity = 0;
-        this.grounded = false;
-
-        // p5.play Spriteを作成
+        this.grounded = false; // p5.play Spriteを作成
         this.sprite = new window.Sprite(this.x, this.y, PLAYER_SIZE);
-        this.sprite.color = COLOR_PALETTE.PLAYER;
 
         // プレイヤーキャラクターの見た目をドット絵風に
-        this.sprite.shape = 'box';
+        this.sprite.shape = 'box'; // 衝突判定用の基本形状として四角形を使用
+        this.sprite.visible = false; // デフォルトの表示を無効化（カスタム描画を使用）
         this.sprite.collider = 'dynamic';
-        this.sprite.rotationLock = true; // p5.playでは画像ベースのアニメーションがデフォルトですが、
-        // 単純な図形でプレイヤーを表現します
+        this.sprite.rotationLock = true;
         this.sprite.width = PLAYER_SIZE;
         this.sprite.height = PLAYER_SIZE;
-        this.sprite.color = COLOR_PALETTE.PLAYER;
 
         // ジャンプアニメーション用の状態変数
         this.isJumping = false;
     }
 
+    /**
+     * ドット絵風キャラクターを描画する
+     */ drawPixelCharacter() {
+        // 現在のアニメーションフレームを計算
+        this.frameCount += this.animationSpeed;
+        const frame = Math.floor(this.frameCount) % 4; // 0-3のフレーム
+
+        window.push();
+        window.rectMode(window.CENTER); // 中心を基準にした描画モード
+
+        // ドット絵の設計（8x8ピクセル相当）
+        // 0=透明, 1=メインカラー, 2=輪郭/シャドウ, 3=ハイライト
+        let pixelPattern;
+
+        if (this.isJumping) {
+            // ジャンプ中のパターン
+            pixelPattern = [
+                [0, 0, 2, 2, 2, 0, 0, 0],
+                [0, 2, 1, 1, 1, 2, 0, 0],
+                [0, 2, 1, 3, 1, 2, 0, 0],
+                [0, 2, 1, 1, 1, 2, 2, 0],
+                [0, 0, 2, 2, 2, 1, 2, 0],
+                [0, 0, 0, 2, 1, 1, 2, 0],
+                [0, 0, 0, 2, 1, 2, 0, 0],
+                [0, 0, 0, 0, 2, 0, 0, 0],
+            ];
+        } else if (this.grounded) {
+            // 地上にいる時のパターン（フレームによって若干変化）
+            if (frame === 0 || frame === 2) {
+                // 通常立ちポーズ
+                pixelPattern = [
+                    [0, 0, 2, 2, 2, 2, 0, 0],
+                    [0, 2, 1, 1, 1, 1, 2, 0],
+                    [0, 2, 1, 3, 3, 1, 2, 0],
+                    [0, 2, 1, 1, 1, 1, 2, 0],
+                    [0, 0, 2, 2, 2, 2, 0, 0],
+                    [0, 0, 2, 1, 1, 2, 0, 0],
+                    [0, 0, 2, 1, 1, 2, 0, 0],
+                    [0, 0, 2, 0, 0, 2, 0, 0],
+                ];
+            } else {
+                // 微妙に動くポーズ
+                pixelPattern = [
+                    [0, 0, 2, 2, 2, 2, 0, 0],
+                    [0, 2, 1, 1, 1, 1, 2, 0],
+                    [0, 2, 3, 1, 3, 1, 2, 0],
+                    [0, 2, 1, 1, 1, 1, 2, 0],
+                    [0, 0, 2, 2, 2, 2, 0, 0],
+                    [0, 0, 2, 1, 1, 2, 0, 0],
+                    [0, 0, 2, 1, 1, 2, 0, 0],
+                    [0, 0, 2, 2, 0, 2, 0, 0],
+                ];
+            }
+        } else {
+            // 落下中のパターン
+            pixelPattern = [
+                [0, 0, 2, 2, 2, 2, 0, 0],
+                [0, 2, 1, 1, 1, 1, 2, 0],
+                [0, 2, 1, 3, 3, 1, 2, 0],
+                [0, 2, 1, 1, 1, 1, 2, 0],
+                [0, 0, 2, 2, 2, 2, 0, 0],
+                [0, 2, 1, 1, 2, 0, 0, 0],
+                [2, 1, 1, 1, 2, 0, 0, 0],
+                [0, 2, 2, 2, 0, 0, 0, 0],
+            ];
+        }
+
+        // ドット絵パターンを描画
+        for (let y = 0; y < 8; y++) {
+            for (let x = 0; x < 8; x++) {
+                const pixel = pixelPattern[y][x];
+                if (pixel !== 0) {
+                    // ピクセル値に応じて色を設定
+                    switch (pixel) {
+                        case 1:
+                            window.fill(COLOR_PALETTE.PLAYER);
+                            break;
+                        case 2:
+                            window.fill(COLOR_PALETTE.PLAYER_OUTLINE);
+                            break;
+                        case 3:
+                            window.fill(COLOR_PALETTE.PLAYER_HIGHLIGHT);
+                            break;
+                    }
+
+                    // ピクセル（ドット）を描画
+                    const pixelX = (x - 4) * this.pixelSize;
+                    const pixelY = (y - 4) * this.pixelSize;
+                    window.rect(pixelX, pixelY, this.pixelSize, this.pixelSize);
+                }
+            }
+        }
+
+        window.pop();
+    }
     /**
      * プレイヤーの状態を更新する
      * @param {Array} platforms 足場オブジェクトの配列
@@ -68,15 +162,21 @@ export class Player {
         this.grounded = false;
 
         // 足場との衝突判定
-        this.checkCollision(platforms); // アニメーション状態を更新
+        this.checkCollision(platforms);
+        // アニメーション状態を更新
         if (!this.grounded) {
             this.isJumping = true;
-            // ジャンプ中は少し縦に短くする
-            this.sprite.height = PLAYER_SIZE * 0.8;
+            // ジャンプ中のみアニメーション速度を遅くする
+            this.animationSpeed = 0.05;
         } else {
             this.isJumping = false;
-            this.sprite.height = PLAYER_SIZE;
+            // 地上では通常のアニメーション速度
+            this.animationSpeed = 0.1;
         }
+
+        // 当たり判定用のspriteサイズを更新
+        // (ドット絵の表現とは別に衝突判定を維持)
+        this.sprite.height = PLAYER_SIZE;
 
         // 床に当たらない簡易処理（画面下限）
         if (this.y > window.height - PLAYER_SIZE / 2) {
@@ -122,20 +222,22 @@ export class Player {
             }
         }
     }
-
     /**
      * プレイヤーを描画する
      */
     draw() {
-        // Spriteは自動的に描画されるので、
-        // p5.playを使用する場合は特別な描画処理は不要
-        // ただし、デバッグ用に衝突範囲などを表示することもできる
+        // スプライトは非表示なので、ここでカスタム描画を行う
+        window.push();
+        window.translate(this.x, this.y);
+        this.drawPixelCharacter();
+        window.pop();
 
-        // スプライトの自動描画が無効化されている場合のフォールバック
-        if (!this.sprite.visible) {
-            window.fill(COLOR_PALETTE.PLAYER);
-            window.rect(this.x, this.y, PLAYER_SIZE, PLAYER_SIZE);
-        }
+        // デバッグ用：衝突範囲の表示（必要に応じてコメントアウト）
+        // window.push();
+        // window.noFill();
+        // window.stroke('#ff0000');
+        // window.rect(this.x, this.y, PLAYER_SIZE, PLAYER_SIZE);
+        // window.pop();
     }
 
     /**

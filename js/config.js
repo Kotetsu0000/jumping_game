@@ -28,6 +28,8 @@ export const PLATFORM_SPAWN_INTERVAL = 100;
 export const COLOR_PALETTE = {
     BACKGROUND: '#87CEEB', // 空色の背景
     PLAYER: '#FF5722', // オレンジ色のプレイヤー
+    PLAYER_OUTLINE: '#8B2500', // プレイヤーの輪郭/シャドウ
+    PLAYER_HIGHLIGHT: '#FFAB91', // プレイヤーのハイライト
     PLATFORM: '#4CAF50', // 緑色の足場
     TEXT: '#333333', // 黒に近いテキスト
     UI_BACKGROUND: 'rgba(255, 255, 255, 0.7)', // 半透明の白色UI背景
