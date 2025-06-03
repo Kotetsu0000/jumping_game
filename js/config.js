@@ -34,6 +34,9 @@ export const COLOR_PALETTE = {
     PLAYER_OUTLINE: '#8B2500', // プレイヤーの輪郭/シャドウ
     PLAYER_HIGHLIGHT: '#FFAB91', // プレイヤーのハイライト
     PLATFORM: '#4CAF50', // 緑色の足場
+    PLATFORM_GRASS: '#8BC34A', // 足場の上の草
+    PLATFORM_STONE: '#607D8B', // 石の足場
+    PLATFORM_STONE_DETAIL: '#455A64', // 石の模様
     TEXT: '#333333', // 黒に近いテキスト
     UI_BACKGROUND: 'rgba(255, 255, 255, 0.7)', // 半透明の白色UI背景
 };
