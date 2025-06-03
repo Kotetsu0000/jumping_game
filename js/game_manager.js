@@ -11,6 +11,7 @@ import {
     COLOR_PALETTE,
     FONT_SIZE_TITLE,
     FONT_SIZE_TEXT,
+    GAME_OVER_MARGIN,
 } from './config.js';
 
 // p5.js関数は window.p5Globals 経由で直接アクセス
@@ -28,8 +29,6 @@ export class GameManager {
 
     /**
      * ゲームの初期設定を行う
-     */ /**
-     * ゲームの初期設定を行う
      */
     setup() {
         this.player.setup();
@@ -38,23 +37,35 @@ export class GameManager {
 
     /**
      * ゲームの状態を更新する
-     */ /**
-     * ゲームの状態を更新する
      */
     update() {
         if (this.state === GAME_STATE.PLAYING) {
             this.stageGenerator.update();
-            this.player.update();
-            this.score++;
+            // プレイヤー更新処理に足場の配列を渡す
+            this.player.update(this.stageGenerator.platforms);
+
+            // ゲームオーバー判定
+            if (this.isGameOver()) {
+                this.state = GAME_STATE.GAME_OVER;
+            } else {
+                this.score++;
+            }
         }
+    }
+    /**
+     * ゲームオーバー判定
+     * @returns {boolean} ゲームオーバーの場合true
+     */
+    isGameOver() {
+        // プレイヤーが画面下限を超えた場合、ゲームオーバー
+        return this.player.y > window.height + GAME_OVER_MARGIN;
     }
 
     /**
      * ゲーム画面を描画する
-     */
-    draw() {
+     */ draw() {
         this.stageGenerator.draw();
-        this.player.draw();
+        this.player.display(); // issue #4の命名規則に合わせて変更
 
         window.fill(COLOR_PALETTE.TEXT);
         window.textSize(FONT_SIZE_TITLE);
@@ -78,6 +89,11 @@ export class GameManager {
             window.text('ゲームオーバー', window.width / 2, window.height / 3);
             window.textSize(FONT_SIZE_TEXT);
             window.text(
+                `Score: ${this.score}`,
+                window.width / 2,
+                window.height / 2
+            );
+            window.text(
                 'スペースキーまたはクリックでリトライ',
                 window.width / 2,
                 window.height / 2 + 50
@@ -91,7 +107,12 @@ export class GameManager {
         if (this.state === GAME_STATE.START) {
             this.startGame();
         } else if (this.state === GAME_STATE.PLAYING) {
-            this.player.jump();
+            // スペースキーが押された場合ジャンプ
+            // p5.playのキー入力イベントを使用して単一押下を検出
+            if (window.keyWentDown(32)) {
+                // 32はスペースキーのキーコード
+                this.player.jump();
+            }
         } else if (this.state === GAME_STATE.GAME_OVER) {
             this.resetGame();
         }
