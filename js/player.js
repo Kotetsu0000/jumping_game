@@ -204,7 +204,8 @@ export class Player {
             for (let platform of platforms) {
                 if (platform.sprite && this.sprite) {
                     // p5.playのスプライト衝突判定を活用
-                    // プレイヤーの下半分と足場の上部との衝突判定                    // 自分の下端と足場の上端の位置関係
+                    // プレイヤーの下半分と足場の上部との衝突判定
+                    // 自分の下端と足場の上端の位置関係
                     const playerBottom = this.y + PLAYER_SIZE / 2;
                     const platformTop = platform.y;
 

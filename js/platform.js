@@ -5,6 +5,14 @@ import { PLATFORM_HEIGHT, PLATFORM_SPEED, COLOR_PALETTE } from './config.js';
 
 // p5.js関数は window.p5Globals 経由で直接アクセス
 
+// プラットフォームの種類と表現に関する定数
+const PLATFORM_TYPE_COUNT = 3; // プラットフォームのタイプ数
+const PLATFORM_TYPE_BASIC = 0;
+const PLATFORM_TYPE_GRASSY = 1;
+const PLATFORM_TYPE_STONE = 2;
+const GRASS_PIXEL_SIZE = 3; // 草のピクセルサイズ
+const STONE_DETAIL_SIZE = 4; // 石のディテールサイズ
+
 export class Platform {
     /**
      * プラットフォームを初期化する
@@ -19,7 +27,7 @@ export class Platform {
         this.height = PLATFORM_HEIGHT;
         this.speed = PLATFORM_SPEED;
         this.sprite = null;
-        this.type = Math.floor(window.random(3)); // 0, 1, 2の3種類のタイプをランダムに選択
+        this.type = Math.floor(window.random(PLATFORM_TYPE_COUNT)); // ランダムなプラットフォームタイプを選択
     }
 
     /** 初期化処理（必要に応じて） */
@@ -31,7 +39,7 @@ export class Platform {
         );
         this.sprite.width = this.width;
         this.sprite.height = this.height;
-        this.sprite.collider = 'static'; // 静的なコライダー（動かない物体）
+        this.sprite.immovable = true; // 静的なスプライト（動かない物体）
         this.sprite.visible = false; // カスタム描画を使用するため、デフォルトのスプライト表示を無効化
     }
 
@@ -48,17 +56,15 @@ export class Platform {
 
     /** プラットフォームを描画 */
     draw() {
-        window.push();
-
-        // タイプに応じて描画を変える
+        window.push(); // タイプに応じて描画を変える
         switch (this.type) {
-            case 0: // 基本的な足場
+            case PLATFORM_TYPE_BASIC: // 基本的な足場
                 this.drawBasicPlatform();
                 break;
-            case 1: // ドット絵風の草地
+            case PLATFORM_TYPE_GRASSY: // ドット絵風の草地
                 this.drawGrassyPlatform();
                 break;
-            case 2: // 石のような足場
+            case PLATFORM_TYPE_STONE: // 石のような足場
                 this.drawStonePlatform();
                 break;
         }
@@ -99,10 +105,8 @@ export class Platform {
 
         // 草の部分（上部の装飾）
         window.fill(COLOR_PALETTE.PLATFORM_GRASS);
-        const grassHeight = 5;
-
-        // 草のピクセル表現
-        const pixelSize = 3;
+        const grassHeight = 5; // 草のピクセル表現
+        const pixelSize = GRASS_PIXEL_SIZE;
         const numGrass = Math.floor(this.width / pixelSize);
 
         for (let i = 0; i < numGrass; i++) {
@@ -131,11 +135,9 @@ export class Platform {
             this.y + this.height / 2,
             this.width,
             this.height
-        );
-
-        // 石のテクスチャ表現
+        ); // 石のテクスチャ表現
         window.fill(COLOR_PALETTE.PLATFORM_STONE_DETAIL);
-        const detailSize = 4;
+        const detailSize = STONE_DETAIL_SIZE;
         const numDetails = Math.floor(
             ((this.width * this.height) / (detailSize * detailSize)) * 0.1
         ); // 10%程度の密度
