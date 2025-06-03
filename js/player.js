@@ -52,7 +52,8 @@ export class Player {
 
     /**
      * ドット絵風キャラクターを描画する
-     */ drawPixelCharacter() {
+     */
+    drawPixelCharacter() {
         // 現在のアニメーションフレームを計算
         this.frameCount += this.animationSpeed;
         const frame = Math.floor(this.frameCount) % 4; // 0-3のフレーム
@@ -145,6 +146,7 @@ export class Player {
 
         window.pop();
     }
+
     /**
      * プレイヤーの状態を更新する
      * @param {Array} platforms 足場オブジェクトの配列
@@ -216,12 +218,12 @@ export class Player {
                 this.velocity > 0
             ) {
                 // 足場の上に位置を補正
-                this.y = platformTop - PLAYER_SIZE / 2;
-                this.velocity = 0;
+                this.y = platformTop - PLAYER_SIZE / 2;                this.velocity = 0;
                 this.grounded = true;
             }
         }
     }
+
     /**
      * プレイヤーを描画する
      */
