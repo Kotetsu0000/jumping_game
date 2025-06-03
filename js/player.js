@@ -204,18 +204,25 @@ export class Player {
             for (let platform of platforms) {
                 if (platform.sprite && this.sprite) {
                     // p5.playのスプライト衝突判定を活用
-                    // プレイヤーの下半分と足場の上部との衝突判定
-
-                    // 自分の下端と足場の上端の位置関係
+                    // プレイヤーの下半分と足場の上部との衝突判定                    // 自分の下端と足場の上端の位置関係
                     const playerBottom = this.y + PLAYER_SIZE / 2;
                     const platformTop = platform.y;
+                    
+                    // 横方向の衝突範囲
+                    const playerLeft = this.x - PLAYER_SIZE / 2;
+                    const playerRight = this.x + PLAYER_SIZE / 2;
+                    const platformLeft = platform.x;
+                    const platformRight = platform.x + platform.width;
 
                     // 足場の上に着地する場合の判定
                     // 1. プレイヤーの下部が足場より下にある
-                    // 2. プレイヤーの前回の位置が足場より上にあった（落下中に足場と衝突）
+                    // 2. 横方向で足場の範囲内
+                    // 3. プレイヤーの前回の位置が足場より上にあった（落下中に足場と衝突）
                     if (
                         playerBottom >= platformTop &&
                         playerBottom <= platformTop + platform.height / 2 &&
+                        playerRight >= platformLeft &&
+                        playerLeft <= platformRight &&
                         this.y - this.velocity < platformTop - PLAYER_SIZE / 2
                     ) {
                         if (this.sprite.collides(platform.sprite)) {

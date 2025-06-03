@@ -22,11 +22,10 @@ export class StageGenerator {
      */
     setup() {
         this.platforms = [];
-    }
-
-    /**
+    }    /**
      * プラットフォームの生成と更新を行う
-     */ update() {
+     */
+    update() {
         // 一定間隔でプラットフォームを生成
         if (window.frameCount % PLATFORM_SPAWN_INTERVAL === 0) {
             const w = window.random(PLATFORM_MIN_WIDTH, PLATFORM_MAX_WIDTH);
