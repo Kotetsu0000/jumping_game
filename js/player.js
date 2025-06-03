@@ -218,7 +218,8 @@ export class Player {
                 this.velocity > 0
             ) {
                 // 足場の上に位置を補正
-                this.y = platformTop - PLAYER_SIZE / 2;                this.velocity = 0;
+                this.y = platformTop - PLAYER_SIZE / 2;
+                this.velocity = 0;
                 this.grounded = true;
             }
         }
