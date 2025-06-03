@@ -19,18 +19,16 @@ export class Platform {
      * @param {number} x プラットフォームのX座標
      * @param {number} y プラットフォームのY座標
      * @param {number} width プラットフォームの幅
-     */
-    constructor(x, y, width) {
+     */ constructor(x, y, width) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = PLATFORM_HEIGHT;
         this.speed = PLATFORM_SPEED;
+        this.baseSpeed = PLATFORM_SPEED; // 基本速度を保存（難易度調整用）
         this.sprite = null;
         this.type = Math.floor(window.random(PLATFORM_TYPE_COUNT)); // ランダムなプラットフォームタイプを選択
-    }
-
-    /** 初期化処理（必要に応じて） */
+    } /** 初期化処理（必要に応じて） */
     setup() {
         // Spriteを作成
         this.sprite = new window.Sprite(
@@ -41,9 +39,8 @@ export class Platform {
         this.sprite.height = this.height;
         this.sprite.immovable = true; // 静的なスプライト（動かない物体）
         this.sprite.visible = false; // カスタム描画を使用するため、デフォルトのスプライト表示を無効化
-    }
-
-    /** プラットフォームの移動を更新 */
+        this.sprite.collider = 'static'; // 静的なコライダーとして設定
+    } /** プラットフォームの移動を更新 */
     update() {
         this.x -= this.speed;
 
@@ -51,6 +48,11 @@ export class Platform {
         if (this.sprite) {
             this.sprite.x = this.x + this.width / 2;
             this.sprite.y = this.y + this.height / 2;
+
+            // スプライトのサイズを再設定（衝突判定のため）
+            this.sprite.width = this.width;
+            this.sprite.height = this.height;
+            this.sprite.debug = false; // デバッグ表示をオフ（必要に応じてオンにする）
         }
     }
 

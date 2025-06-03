@@ -191,7 +191,6 @@ export class Player {
             this.grounded = true;
         }
     }
-
     /**
      * 足場との衝突判定
      * @param {Array} platforms 足場オブジェクトの配列
@@ -199,67 +198,38 @@ export class Player {
     checkCollision(platforms) {
         if (!platforms) return;
 
-        // 落下中（速度が正）かつまだ着地していない場合のみ衝突判定を行う
-        if (this.velocity > 0 && !this.grounded) {
+        // 落下中（速度が正）の場合のみ足場との着地判定を行う
+        if (this.velocity > 0) {
             for (let platform of platforms) {
-                if (platform.sprite && this.sprite) {
-                    // p5.playのスプライト衝突判定を活用
-                    // プレイヤーの下半分と足場の上部との衝突判定
-                    // 自分の下端と足場の上端の位置関係
-                    const playerBottom = this.y + PLAYER_SIZE / 2;
-                    const platformTop = platform.y;
+                // プレイヤーの位置情報
+                const playerBottom = this.y + PLAYER_SIZE / 2;
+                const playerTop = this.y - PLAYER_SIZE / 2;
+                const playerLeft = this.x - PLAYER_SIZE / 2;
+                const playerRight = this.x + PLAYER_SIZE / 2;
 
-                    // 横方向の衝突範囲
-                    const playerLeft = this.x - PLAYER_SIZE / 2;
-                    const playerRight = this.x + PLAYER_SIZE / 2;
-                    const platformLeft = platform.x;
-                    const platformRight = platform.x + platform.width;
+                // 足場の位置情報
+                const platformTop = platform.y;
+                const platformLeft = platform.x;
+                const platformRight = platform.x + platform.width;
 
-                    // 足場の上に着地する場合の判定
-                    // 1. プレイヤーの下部が足場より下にある
-                    // 2. 横方向で足場の範囲内
-                    // 3. プレイヤーの前回の位置が足場より上にあった（落下中に足場と衝突）
-                    if (
-                        playerBottom >= platformTop &&
-                        playerBottom <= platformTop + platform.height / 2 &&
-                        playerRight >= platformLeft &&
-                        playerLeft <= platformRight &&
-                        this.y - this.velocity < platformTop - PLAYER_SIZE / 2
-                    ) {
-                        if (this.sprite.collides(platform.sprite)) {
-                            // 足場の上に位置を補正
-                            this.y = platformTop - PLAYER_SIZE / 2;
-                            this.velocity = 0;
-                            this.grounded = true;
-                            break; // 一度着地したら他の足場の判定は不要
-                        }
-                    }
-                } else {
-                    // スプライトが存在しない場合はフォールバック処理（既存の処理）
-                    // 自分の下端と足場の上端の位置関係
-                    const playerBottom = this.y + PLAYER_SIZE / 2;
-                    const platformTop = platform.y;
+                // 前のフレームでのプレイヤーの位置（速度を引いて計算）
+                const prevPlayerBottom = playerBottom - this.velocity;
 
-                    // 横方向の衝突範囲
-                    const playerLeft = this.x - PLAYER_SIZE / 2;
-                    const playerRight = this.x + PLAYER_SIZE / 2;
-                    const platformLeft = platform.x;
-                    const platformRight = platform.x + platform.width;
-
-                    // 足場の上に着地する場合の判定
-                    if (
-                        playerBottom >= platformTop &&
-                        playerBottom <= platformTop + platform.height / 2 &&
-                        playerRight >= platformLeft &&
-                        playerLeft <= platformRight &&
-                        this.velocity > 0
-                    ) {
-                        // 足場の上に位置を補正
-                        this.y = platformTop - PLAYER_SIZE / 2;
-                        this.velocity = 0;
-                        this.grounded = true;
-                        break; // 一度着地したら他の足場の判定は不要
-                    }
+                // 衝突判定
+                // 1. 前のフレームではプレイヤーの下端が足場の上端より上にあった
+                // 2. 現在のフレームではプレイヤーの下端が足場の上端より下にある
+                // 3. プレイヤーが水平方向で足場と重なっている
+                if (
+                    prevPlayerBottom <= platformTop &&
+                    playerBottom >= platformTop &&
+                    playerRight >= platformLeft &&
+                    playerLeft <= platformRight
+                ) {
+                    // 足場の上に位置を補正
+                    this.y = platformTop - PLAYER_SIZE / 2;
+                    this.velocity = 0;
+                    this.grounded = true;
+                    break; // 一度着地したら他の足場の判定は不要
                 }
             }
         }

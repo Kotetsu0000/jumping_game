@@ -42,13 +42,15 @@ export class GameManager {
         if (this.state === GAME_STATE.PLAYING) {
             this.stageGenerator.update();
             // プレイヤー更新処理に足場の配列を渡す
-            this.player.update(this.stageGenerator.platforms);
-
-            // ゲームオーバー判定
+            this.player.update(this.stageGenerator.platforms); // ゲームオーバー判定
             if (this.isGameOver()) {
                 this.state = GAME_STATE.GAME_OVER;
             } else {
-                this.score++;
+                // 難易度係数に応じてスコアを増加（最低1、最大は難易度の2倍）
+                const difficultyBonus = Math.ceil(
+                    this.stageGenerator.difficultyFactor
+                );
+                this.score += difficultyBonus;
             }
         }
     }
