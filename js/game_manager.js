@@ -63,10 +63,9 @@ export class GameManager {
 
     /**
      * ゲーム画面を描画する
-     */
-    draw() {
+     */ draw() {
         this.stageGenerator.draw();
-        this.player.draw();
+        this.player.display(); // issue #4の命名規則に合わせて変更
 
         window.fill(COLOR_PALETTE.TEXT);
         window.textSize(FONT_SIZE_TITLE);

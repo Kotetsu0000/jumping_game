@@ -227,8 +227,9 @@ export class Player {
 
     /**
      * プレイヤーを描画する
+     * issueの命名規則に合わせて、display()メソッドとして定義
      */
-    draw() {
+    display() {
         // スプライトは非表示なので、ここでカスタム描画を行う
         window.push();
         window.translate(this.x, this.y);
@@ -241,6 +242,13 @@ export class Player {
         // window.stroke('#ff0000');
         // window.rect(this.x, this.y, PLAYER_SIZE, PLAYER_SIZE);
         // window.pop();
+    }
+
+    /**
+     * 下位互換性のために draw() も維持（他のコンポーネントと一貫性を保つため）
+     */
+    draw() {
+        this.display();
     }
 
     /**
