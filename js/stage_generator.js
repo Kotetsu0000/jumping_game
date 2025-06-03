@@ -26,13 +26,14 @@ export class StageGenerator {
 
     /**
      * プラットフォームの生成と更新を行う
-     */
-    update() {
+     */ update() {
         // 一定間隔でプラットフォームを生成
         if (window.frameCount % PLATFORM_SPAWN_INTERVAL === 0) {
             const w = window.random(PLATFORM_MIN_WIDTH, PLATFORM_MAX_WIDTH);
             const y = window.random(PLATFORM_MIN_HEIGHT, PLATFORM_MAX_HEIGHT);
-            this.platforms.push(new Platform(window.width, y, w));
+            const platform = new Platform(window.width, y, w);
+            platform.setup(); // スプライトを初期化
+            this.platforms.push(platform);
         }
         // 各プラットフォームの更新
         this.platforms.forEach((p) => p.update());
