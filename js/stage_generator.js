@@ -22,7 +22,8 @@ export class StageGenerator {
      */
     setup() {
         this.platforms = [];
-    }    /**
+    }
+    /**
      * プラットフォームの生成と更新を行う
      */
     update() {

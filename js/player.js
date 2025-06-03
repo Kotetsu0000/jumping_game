@@ -207,7 +207,7 @@ export class Player {
                     // プレイヤーの下半分と足場の上部との衝突判定                    // 自分の下端と足場の上端の位置関係
                     const playerBottom = this.y + PLAYER_SIZE / 2;
                     const platformTop = platform.y;
-                    
+
                     // 横方向の衝突範囲
                     const playerLeft = this.x - PLAYER_SIZE / 2;
                     const playerRight = this.x + PLAYER_SIZE / 2;
