@@ -8,6 +8,9 @@ import {
     COLOR_PALETTE,
 } from './config.js';
 
+// ドット絵アニメーション用の定数
+const PIXEL_GRID_SIZE = 8; // ドット絵の解像度（8x8ピクセル）
+
 export class Player {
     /**
      * プレイヤーを初期化する
@@ -24,7 +27,7 @@ export class Player {
         this.sprite = null;
         this.frameCount = 0; // アニメーション用フレームカウンタ
         this.animationSpeed = 0.1; // アニメーションの速度
-        this.pixelSize = PLAYER_SIZE / 8; // ドット（ピクセル）のサイズ
+        this.pixelSize = PLAYER_SIZE / PIXEL_GRID_SIZE; // ドット（ピクセル）のサイズ
     }
 
     /**
@@ -119,8 +122,8 @@ export class Player {
         }
 
         // ドット絵パターンを描画
-        for (let y = 0; y < 8; y++) {
-            for (let x = 0; x < 8; x++) {
+        for (let y = 0; y < PIXEL_GRID_SIZE; y++) {
+            for (let x = 0; x < PIXEL_GRID_SIZE; x++) {
                 const pixel = pixelPattern[y][x];
                 if (pixel !== 0) {
                     // ピクセル値に応じて色を設定
@@ -137,8 +140,9 @@ export class Player {
                     }
 
                     // ピクセル（ドット）を描画
-                    const pixelX = (x - 4) * this.pixelSize;
-                    const pixelY = (y - 4) * this.pixelSize;
+                    const centerOffset = PIXEL_GRID_SIZE / 2; // 中心位置を計算
+                    const pixelX = (x - centerOffset) * this.pixelSize;
+                    const pixelY = (y - centerOffset) * this.pixelSize;
                     window.rect(pixelX, pixelY, this.pixelSize, this.pixelSize);
                 }
             }

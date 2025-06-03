@@ -11,6 +11,7 @@ import {
     COLOR_PALETTE,
     FONT_SIZE_TITLE,
     FONT_SIZE_TEXT,
+    GAME_OVER_MARGIN,
 } from './config.js';
 
 // p5.js関数は window.p5Globals 経由で直接アクセス
@@ -51,14 +52,13 @@ export class GameManager {
             }
         }
     }
-
     /**
      * ゲームオーバー判定
      * @returns {boolean} ゲームオーバーの場合true
      */
     isGameOver() {
         // プレイヤーが画面下限を超えた場合、ゲームオーバー
-        return this.player.y > window.height + 100;
+        return this.player.y > window.height + GAME_OVER_MARGIN;
     }
 
     /**
@@ -108,7 +108,8 @@ export class GameManager {
             this.startGame();
         } else if (this.state === GAME_STATE.PLAYING) {
             // スペースキーが押された場合ジャンプ
-            if (window.keyCode === 32) {
+            // p5.playのキー入力イベントを使用して単一押下を検出
+            if (window.keyWentDown(32)) {
                 // 32はスペースキーのキーコード
                 this.player.jump();
             }

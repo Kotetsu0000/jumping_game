@@ -24,6 +24,9 @@ export const PLATFORM_MAX_HEIGHT = 450;
 // フレーム数単位でのプラットフォーム生成間隔
 export const PLATFORM_SPAWN_INTERVAL = 100;
 
+// ゲームオーバー判定用の設定
+export const GAME_OVER_MARGIN = 100; // 画面下限からのマージン（ゲームオーバーと判定する距離）
+
 // 色設定
 export const COLOR_PALETTE = {
     BACKGROUND: '#87CEEB', // 空色の背景
