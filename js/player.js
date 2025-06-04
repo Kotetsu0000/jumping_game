@@ -180,18 +180,12 @@ export class Player {
             this.isJumping = false;
             // 地上では通常のアニメーション速度
             this.animationSpeed = 0.1;
-        }
-
-        // 当たり判定用のspriteサイズを更新
+        } // 当たり判定用のspriteサイズを更新
         // (ドット絵の表現とは別に衝突判定を維持)
         this.sprite.height = PLAYER_SIZE;
 
-        // 床に当たらない簡易処理（画面下限）
-        if (this.y > window.height - PLAYER_SIZE / 2) {
-            this.y = window.height - PLAYER_SIZE / 2;
-            this.velocity = 0;
-            this.grounded = true;
-        }
+        // 床との衝突判定を削除
+        // ↓この処理がゲームオーバー判定を妨げていたため削除
     }
     /**
      * 足場との衝突判定

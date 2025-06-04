@@ -94,11 +94,18 @@ export class GameManager {
      * @returns {boolean} ゲームオーバーの場合true
      */
     isGameOver() {
-        // プレイヤーが画面下限を超えた場合、ゲームオーバー
-        const isOffScreen = this.player.y > window.height + GAME_OVER_MARGIN;
+        // p5.jsではCANVAS_HEIGHTで定義された画面高さを基準に判定
+        // 画面下限を超えた場合、ゲームオーバー
+        // GAME_OVER_MARGINはプレイヤーがちょうど見えなくなるくらい
+        const isOffScreen = this.player.y > window.height + PLAYER_SIZE;
+
+        // デバッグ出力
         if (isOffScreen) {
-            console.log('プレイヤーが画面外に落下: y=' + this.player.y);
+            console.log(
+                `ゲームオーバー検出: プレイヤー位置y=${this.player.y}, 画面高さ: ${window.height}`
+            );
         }
+
         return isOffScreen;
     }
 
