@@ -15,4 +15,7 @@ window.onload = function () {
             'エラー: p5.play のグローバルオブジェクトが見つかりません。'
         );
     }
+
+    // デバッグモードの初期設定（Dキーでトグル可能）
+    window.debugMode = false;
 };
