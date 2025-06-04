@@ -96,7 +96,8 @@ export class GameManager {
     isGameOver() {
         // p5.jsではCANVAS_HEIGHTで定義された画面高さを基準に判定
         // 画面下限を超えた場合、ゲームオーバー
-        // GAME_OVER_MARGINはプレイヤーがちょうど見えなくなるくらい
+        // PLAYER_SIZEはプレイヤーの視覚的なサイズを表します。
+        // プレイヤーが完全に画面外に出たことを判定するために使用します。
         const isOffScreen = this.player.y > window.height + PLAYER_SIZE;
 
         // デバッグ出力
@@ -147,10 +148,8 @@ export class GameManager {
                 `スコア: ${this.score}`,
                 window.width / 2,
                 window.height / 2 - 20
-            );
-
-            // ハイスコア表示（新記録かどうかで色を変える）
-            if (this.score >= this.highScore) {
+            ); // ハイスコア表示（新記録かどうかで色を変える）
+            if (this.score > this.highScore) {
                 window.fill(COLOR_PALETTE.HIGH_SCORE);
                 window.text(
                     `ハイスコア: ${this.highScore} - 新記録!`,
