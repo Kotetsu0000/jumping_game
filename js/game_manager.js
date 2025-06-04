@@ -23,11 +23,11 @@ const HIGH_SCORE_KEY = 'jumping_game_high_score';
 
 export class GameManager {
     /**
-     * ゲームマネージャーを初期化する
-     */ constructor() {
+     * ゲームマネージャーを初期化する     */ constructor() {
         this.state = GAME_STATE.START;
         this.score = 0;
         this.highScore = this.loadHighScore();
+        this.isNewHighScore = false; // 新記録フラグを追加
         this.player = new Player(INITIAL_PLAYER_X, INITIAL_PLAYER_Y);
         this.stageGenerator = new StageGenerator();
         this.spaceKeyPressed = false; // スペースキー押下状態を追跡
@@ -64,18 +64,20 @@ export class GameManager {
         if (this.state === GAME_STATE.PLAYING) {
             this.stageGenerator.update();
             // プレイヤー更新処理に足場の配列を渡す
-            this.player.update(this.stageGenerator.platforms);
-
-            // キー入力状態を更新（スペースキーが離されたらフラグをリセット）
+            this.player.update(this.stageGenerator.platforms); // キー入力状態を更新（スペースキーが離されたらフラグをリセット）
             if (!window.keyIsDown(32)) {
                 this.spaceKeyPressed = false;
-            } // ゲームオーバー判定
+            }
+
+            // ゲームオーバー判定
             if (this.isGameOver()) {
                 this.state = GAME_STATE.GAME_OVER;
                 console.log('ゲームオーバー: ' + this.player.y);
 
                 // ハイスコア更新チェック
+                this.isNewHighScore = false;
                 if (this.score > this.highScore) {
+                    this.isNewHighScore = true;
                     this.highScore = this.score;
                     this.saveHighScore(this.highScore);
                     console.log('新しいハイスコア: ' + this.highScore);
@@ -96,9 +98,8 @@ export class GameManager {
     isGameOver() {
         // p5.jsではCANVAS_HEIGHTで定義された画面高さを基準に判定
         // 画面下限を超えた場合、ゲームオーバー
-        // PLAYER_SIZEはプレイヤーの視覚的なサイズを表します。
-        // プレイヤーが完全に画面外に出たことを判定するために使用します。
-        const isOffScreen = this.player.y > window.height + PLAYER_SIZE;
+        // GAME_OVER_MARGINを使用してプレイヤーが完全に画面外に出たことを判定
+        const isOffScreen = this.player.y > window.height + GAME_OVER_MARGIN;
 
         // デバッグ出力
         if (isOffScreen) {
@@ -136,11 +137,11 @@ export class GameManager {
             // スコア表示
             window.textSize(FONT_SIZE_SCORE);
             window.textAlign(window.RIGHT, window.TOP);
-            window.text(`Score: ${this.score}`, window.width - 20, 50);
+            window.text(`スコア: ${this.score}`, window.width - 20, 50);
 
             // ハイスコア表示
             window.fill(COLOR_PALETTE.HIGH_SCORE);
-            window.text(`High Score: ${this.highScore}`, window.width - 20, 20);
+            window.text(`ハイスコア: ${this.highScore}`, window.width - 20, 20);
         } else if (this.state === GAME_STATE.GAME_OVER) {
             window.text('ゲームオーバー', window.width / 2, window.height / 3);
             window.textSize(FONT_SIZE_TEXT);
@@ -148,8 +149,10 @@ export class GameManager {
                 `スコア: ${this.score}`,
                 window.width / 2,
                 window.height / 2 - 20
-            ); // ハイスコア表示（新記録かどうかで色を変える）
-            if (this.score > this.highScore) {
+            );
+
+            // ハイスコア表示（新記録かどうかで色を変える）
+            if (this.isNewHighScore) {
                 window.fill(COLOR_PALETTE.HIGH_SCORE);
                 window.text(
                     `ハイスコア: ${this.highScore} - 新記録!`,

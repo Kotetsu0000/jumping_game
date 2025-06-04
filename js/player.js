@@ -180,7 +180,8 @@ export class Player {
             this.isJumping = false;
             // 地上では通常のアニメーション速度
             this.animationSpeed = 0.1;
-        } // 当たり判定用のspriteサイズを更新
+        }
+        // 当たり判定用のspriteサイズを更新
         // (ドット絵の表現とは別に衝突判定を維持)
         this.sprite.height = PLAYER_SIZE;
 
