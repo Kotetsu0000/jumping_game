@@ -11,9 +11,13 @@ import {
     COLOR_PALETTE,
     FONT_SIZE_TITLE,
     FONT_SIZE_TEXT,
+    FONT_SIZE_SCORE,
     GAME_OVER_MARGIN,
     PLAYER_SIZE,
 } from './config.js';
+
+// ローカルストレージキー
+const HIGH_SCORE_KEY = 'jumping_game_high_score';
 
 // p5.js関数は window.p5Globals 経由で直接アクセス
 
@@ -23,9 +27,27 @@ export class GameManager {
      */ constructor() {
         this.state = GAME_STATE.START;
         this.score = 0;
+        this.highScore = this.loadHighScore();
         this.player = new Player(INITIAL_PLAYER_X, INITIAL_PLAYER_Y);
         this.stageGenerator = new StageGenerator();
         this.spaceKeyPressed = false; // スペースキー押下状態を追跡
+    }
+
+    /**
+     * ローカルストレージからハイスコアを読み込む
+     * @returns {number} ハイスコア
+     */
+    loadHighScore() {
+        const savedScore = localStorage.getItem(HIGH_SCORE_KEY);
+        return savedScore ? parseInt(savedScore) : 0;
+    }
+
+    /**
+     * ハイスコアをローカルストレージに保存する
+     * @param {number} score - 保存するスコア
+     */
+    saveHighScore(score) {
+        localStorage.setItem(HIGH_SCORE_KEY, score.toString());
     }
 
     /**
@@ -47,12 +69,17 @@ export class GameManager {
             // キー入力状態を更新（スペースキーが離されたらフラグをリセット）
             if (!window.keyIsDown(32)) {
                 this.spaceKeyPressed = false;
-            }
-
-            // ゲームオーバー判定
+            } // ゲームオーバー判定
             if (this.isGameOver()) {
                 this.state = GAME_STATE.GAME_OVER;
                 console.log('ゲームオーバー: ' + this.player.y);
+
+                // ハイスコア更新チェック
+                if (this.score > this.highScore) {
+                    this.highScore = this.score;
+                    this.saveHighScore(this.highScore);
+                    console.log('新しいハイスコア: ' + this.highScore);
+                }
             } else {
                 // 難易度係数に応じてスコアを増加（最低1、最大は難易度の2倍）
                 const difficultyBonus = Math.ceil(
@@ -98,19 +125,44 @@ export class GameManager {
                 window.height / 2 + 50
             );
         } else if (this.state === GAME_STATE.PLAYING) {
-            window.text(`Score: ${this.score}`, window.width - 100, 50);
+            // スコア表示
+            window.textSize(FONT_SIZE_SCORE);
+            window.textAlign(window.RIGHT, window.TOP);
+            window.text(`Score: ${this.score}`, window.width - 20, 50);
+
+            // ハイスコア表示
+            window.fill(COLOR_PALETTE.HIGH_SCORE);
+            window.text(`High Score: ${this.highScore}`, window.width - 20, 20);
         } else if (this.state === GAME_STATE.GAME_OVER) {
             window.text('ゲームオーバー', window.width / 2, window.height / 3);
             window.textSize(FONT_SIZE_TEXT);
             window.text(
-                `Score: ${this.score}`,
+                `スコア: ${this.score}`,
                 window.width / 2,
-                window.height / 2
+                window.height / 2 - 20
             );
+
+            // ハイスコア表示（新記録かどうかで色を変える）
+            if (this.score >= this.highScore) {
+                window.fill(COLOR_PALETTE.HIGH_SCORE);
+                window.text(
+                    `ハイスコア: ${this.highScore} - 新記録!`,
+                    window.width / 2,
+                    window.height / 2 + 20
+                );
+            } else {
+                window.text(
+                    `ハイスコア: ${this.highScore}`,
+                    window.width / 2,
+                    window.height / 2 + 20
+                );
+            }
+
+            window.fill(COLOR_PALETTE.TEXT);
             window.text(
                 'スペースキーまたはクリックでリトライ',
                 window.width / 2,
-                window.height / 2 + 50
+                window.height / 2 + 70
             );
         }
     }
