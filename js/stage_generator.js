@@ -12,6 +12,8 @@ import {
     PLAYER_JUMP_FORCE,
     GRAVITY,
     PLAYER_SIZE,
+    INITIAL_PLAYER_X,
+    INITIAL_PLAYER_Y,
 } from './config.js';
 
 // p5.js関数は window.p5Globals 経由で直接アクセス
@@ -32,8 +34,9 @@ export class StageGenerator {
      */
     setup() {
         this.platforms = [];
-        this.lastPlatformX = window.width;
-        this.lastPlatformY = window.height / 2;
+        // p5.jsのウィンドウサイズを正しく取得
+        this.lastPlatformX = window.width || window.innerWidth;
+        this.lastPlatformY = (window.height || window.innerHeight) / 2;
         this.lastPlatformWidth = PLATFORM_MIN_WIDTH;
         this.difficultyFactor = 1.0;
         this.gameTime = 0;
@@ -42,23 +45,49 @@ export class StageGenerator {
         // 初期の足場を配置
         this.generateInitialPlatforms();
     }
-
     /**
      * 初期の足場を生成
      */
     generateInitialPlatforms() {
         // 画面内に最初の足場を複数配置
-        let currentX = 100; // 最初の足場のX座標
-        let currentY = window.height / 2; // 初期Y座標
+        // プレイヤーの初期位置に合わせた最初の足場
+        const initialWidth = 200; // 初期足場は広めに
 
+        // 重要：プレイヤーの足元に確実に足場を配置
+        // プレイヤーのサイズも考慮して正確に計算
+        const initialY = INITIAL_PLAYER_Y + PLAYER_SIZE / 2;
+
+        // プレイヤーが足場の中央に立つように位置を調整
+        const initialPlatform = new Platform(
+            INITIAL_PLAYER_X - initialWidth / 2,
+            initialY,
+            initialWidth
+        );
+        initialPlatform.setup();
+        this.platforms.push(initialPlatform);
+
+        console.log(
+            `初期足場を配置: x=${
+                INITIAL_PLAYER_X - initialWidth / 2
+            }, y=${initialY}, width=${initialWidth}`
+        );
+        console.log(
+            `プレイヤー初期位置: x=${INITIAL_PLAYER_X}, y=${INITIAL_PLAYER_Y}`
+        );
+
+        // 残りの足場を配置
+        let currentX = INITIAL_PLAYER_X + initialWidth / 2 + 50; // 最初の足場の右端から適度な距離を空ける
+        let currentY = initialY; // 最初は同じ高さからスタート
+
+        // 画面の右端から少し先までプラットフォームを配置
         while (currentX < window.width + 200) {
-            // 画面外少し先まで配置
             const width = window.random(PLATFORM_MIN_WIDTH, PLATFORM_MAX_WIDTH);
             const platform = new Platform(currentX, currentY, width);
             platform.setup();
             this.platforms.push(platform);
 
             // 次の足場の位置を決定
+            // ジャンプ可能な範囲内で次の足場を配置
             currentX += width + window.random(50, 150);
             currentY = this.getNextPlatformY(currentY);
 
@@ -188,7 +217,28 @@ export class StageGenerator {
      * すべてのプラットフォームを描画する
      */
     draw() {
+        // デバッグモードのフラグ（必要に応じて有効化）
+        const debugMode = false;
+
+        // プラットフォームを描画
         this.platforms.forEach((p) => p.draw());
+
+        // デバッグモード：プラットフォームとプレイヤーの位置関係を確認
+        if (debugMode) {
+            window.push();
+            window.fill(255);
+            window.textSize(10);
+            this.platforms.forEach((p, index) => {
+                const centerX = p.x + p.width / 2;
+                const centerY = p.y + p.height / 2;
+                window.text(
+                    `P${index}: x=${Math.floor(p.x)},y=${Math.floor(p.y)}`,
+                    centerX,
+                    centerY - 10
+                );
+            });
+            window.pop();
+        }
     }
 
     /**

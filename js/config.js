@@ -25,7 +25,7 @@ export const PLATFORM_MAX_HEIGHT = 450;
 export const PLATFORM_SPAWN_INTERVAL = 100;
 
 // ゲームオーバー判定用の設定
-export const GAME_OVER_MARGIN = 100; // 画面下限からのマージン（ゲームオーバーと判定する距離）
+export const GAME_OVER_MARGIN = 50; // 画面下限からのマージン（ゲームオーバーと判定する距離）
 
 // 色設定
 export const COLOR_PALETTE = {
