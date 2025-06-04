@@ -40,6 +40,15 @@ window.draw = function () {
  */
 window.keyPressed = function () {
     if (gameManager) {
+        // Dキーを押したらデバッグモードをトグル
+        if (window.key === 'd' || window.key === 'D') {
+            window.debugMode = !window.debugMode;
+            console.log(
+                `デバッグモード: ${window.debugMode ? 'オン' : 'オフ'}`
+            );
+            return;
+        }
+
         gameManager.keyPressed();
     }
 };
@@ -50,5 +59,14 @@ window.keyPressed = function () {
 window.mousePressed = function () {
     if (gameManager) {
         gameManager.mousePressed();
+    }
+};
+
+/**
+ * キーが離された時の処理
+ */
+window.keyReleased = function () {
+    if (gameManager) {
+        gameManager.keyReleased();
     }
 };

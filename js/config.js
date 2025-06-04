@@ -9,20 +9,20 @@ export const CANVAS_HEIGHT = 600;
 
 // プレイヤー設定
 export const PLAYER_SIZE = 30;
-export const PLAYER_JUMP_FORCE = 15;
+export const PLAYER_JUMP_FORCE = 20;
 export const GRAVITY = 0.8;
 export const INITIAL_PLAYER_X = 200;
 export const INITIAL_PLAYER_Y = 300;
 
 // プラットフォーム設定
-export const PLATFORM_SPEED = 3;
+export const PLATFORM_SPEED = 4;
 export const PLATFORM_MIN_WIDTH = 100;
-export const PLATFORM_MAX_WIDTH = 200;
+export const PLATFORM_MAX_WIDTH = 150;
 export const PLATFORM_HEIGHT = 20;
 export const PLATFORM_MIN_HEIGHT = 150;
 export const PLATFORM_MAX_HEIGHT = 450;
 // フレーム数単位でのプラットフォーム生成間隔
-export const PLATFORM_SPAWN_INTERVAL = 100;
+export const PLATFORM_SPAWN_INTERVAL = 70;
 
 // ゲームオーバー判定用の設定
 export const GAME_OVER_MARGIN = 100; // 画面下限からのマージン（ゲームオーバーと判定する距離）
