@@ -52,34 +52,38 @@ export class StageGenerator {
     generateInitialPlatforms() {
         // 画面内に最初の足場を複数配置
         // プレイヤーの初期位置に合わせた最初の足場
-        const initialWidth = 200; // 初期足場は広めに
+        const initialWidth = 400; // 初期足場をより広く設定（右側に長く伸ばす）
 
         // 重要：プレイヤーの足元に確実に足場を配置
         // プレイヤーのサイズも考慮して正確に計算
         const initialY = INITIAL_PLAYER_Y + PLAYER_SIZE / 2;
 
-        // プレイヤーが足場の中央に立つように位置を調整
+        // プレイヤーが足場の左側に立つように位置を調整
+        // 左側にはプレイヤーサイズの2倍、右側により長く伸ばす
         const initialPlatform = new Platform(
-            INITIAL_PLAYER_X - initialWidth / 2,
+            INITIAL_PLAYER_X - PLAYER_SIZE * 2,
             initialY,
             initialWidth
         );
         initialPlatform.setup();
         this.platforms.push(initialPlatform);
 
+        // 最初の足場の位置を保存（次の足場生成の参照点として使用）
+        this.lastPlatformX = INITIAL_PLAYER_X - PLAYER_SIZE * 2;
+        this.lastPlatformWidth = initialWidth;
+
         if (window.debugMode) {
             console.log(
                 `初期足場を配置: x=${
-                    INITIAL_PLAYER_X - initialWidth / 2
+                    INITIAL_PLAYER_X - PLAYER_SIZE * 2
                 }, y=${initialY}, width=${initialWidth}`
             );
             console.log(
                 `プレイヤー初期位置: x=${INITIAL_PLAYER_X}, y=${INITIAL_PLAYER_Y}`
             );
-        }
-
-        // 残りの足場を配置
-        let currentX = INITIAL_PLAYER_X + initialWidth / 2 + 50; // 最初の足場の右端から適度な距離を空ける
+        } // 残りの足場を配置
+        // 初期足場の右端から開始
+        let currentX = INITIAL_PLAYER_X - PLAYER_SIZE * 2 + initialWidth + 30; // 初期足場の右端から短い距離で開始
         let currentY = initialY; // 最初は同じ高さからスタート
 
         // ジャンプの最大高さを計算
@@ -95,8 +99,12 @@ export class StageGenerator {
             platform.setup();
             this.platforms.push(platform);
 
-            // 次の足場の水平距離を決定（初期足場は確実に到達できるように近めに配置）
-            const horizontalGap = window.random(70, 100);
+            // 最初の数個の足場は確実に到達できるように非常に近めに配置
+            // 足場の数に応じて徐々に間隔を広げていく
+            const isFirstPlatforms = this.platforms.length < 5;
+            const horizontalGap = isFirstPlatforms
+                ? window.random(50, 80) // 最初の数個は非常に近く
+                : window.random(70, 100); // それ以降は通常の間隔
             currentX += width + horizontalGap; // 次の足場のY座標を計算（初期配置では非常に簡単に）
             // 初期足場は非常に到達しやすく配置
             let heightDiff;
