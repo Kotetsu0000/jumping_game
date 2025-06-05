@@ -3,7 +3,7 @@
  */
 import { PLATFORM_HEIGHT, PLATFORM_SPEED, COLOR_PALETTE } from './config.js';
 
-// p5.js関数は window.p5Globals 経由で直接アクセス
+// p5.js関数は window 経由で直接アクセス
 
 // プラットフォームの種類と表現に関する定数
 const PLATFORM_TYPE_COUNT = 3; // プラットフォームのタイプ数

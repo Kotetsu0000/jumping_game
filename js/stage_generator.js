@@ -17,7 +17,7 @@ import {
     PLATFORM_SPEED,
 } from './config.js';
 
-// p5.js関数は window.p5Globals 経由で直接アクセス
+// p5.js関数は window 経由で直接アクセス
 
 export class StageGenerator {
     constructor() {
