@@ -191,7 +191,7 @@ export class Player {
      */ update(platforms) {
         // 前のフレームの接地状態を保存
         const wasGrounded = this.grounded;
-        
+
         // 重力を適用（接地状態でなければ）
         if (!this.grounded) {
             this.velocity += GRAVITY;
@@ -202,18 +202,18 @@ export class Player {
         if (this.sprite) {
             this.sprite.x = this.x;
             this.sprite.y = this.y;
-            
+
             // 当たり判定用のspriteサイズを更新
             this.sprite.width = PLAYER_SIZE;
             this.sprite.height = PLAYER_SIZE;
-            
+
             // デバッグモードの場合、衝突判定の可視化を有効にする
             this.sprite.debug = window.debugMode ? true : false;
         }
 
         // 着地状態をリセット（毎フレームで再判定）
         this.grounded = false;
-        
+
         // 足場との衝突判定
         this.checkCollision(platforms);
 
@@ -226,7 +226,7 @@ export class Player {
             this.isJumping = false;
             // 地上では少し速めのアニメーション速度
             this.animationSpeed = 0.1;
-            
+
             // 着地したばかりの場合、着地エフェクトを適用できる
             if (!wasGrounded && this.grounded) {
                 // 着地エフェクトをここに追加できます（必要に応じて）
@@ -246,7 +246,7 @@ export class Player {
         // 前回の接地状態を保存
         const isStartingPosition = Math.abs(this.velocity) < 0.1;
         let isOnAnyPlatform = false;
-        
+
         // プレイヤーの位置情報
         const playerBottom = this.y + PLAYER_SIZE / 2;
         const prevPlayerBottom = playerBottom - this.velocity;
@@ -255,9 +255,12 @@ export class Player {
 
         // 最も効率的な検出のため、プレイヤーの近くにある足場のみを処理
         // 画面内の足場のみを処理（パフォーマンス最適化）
-        const nearbyPlatforms = platforms.filter(platform => {
+        const nearbyPlatforms = platforms.filter((platform) => {
             // 画面外+少し余白の足場は無視（パフォーマンス最適化）
-            if (platform.x + platform.width < -50 || platform.x > window.width + 50) {
+            if (
+                platform.x + platform.width < -50 ||
+                platform.x > window.width + 50
+            ) {
                 return false;
             }
             // プレイヤーから縦方向に遠すぎる足場は無視
@@ -283,7 +286,11 @@ export class Player {
 
             try {
                 // 最初にp5.playのネイティブ衝突判定を使用
-                if (this.sprite && platform.sprite && typeof this.sprite.collide === 'function') {
+                if (
+                    this.sprite &&
+                    platform.sprite &&
+                    typeof this.sprite.collide === 'function'
+                ) {
                     isColliding = this.sprite.collide(platform.sprite);
                 }
             } catch (e) {
@@ -297,7 +304,10 @@ export class Player {
                 const distanceToSurface = Math.abs(playerBottom - platformTop);
 
                 // 落下中で足場の表面に近い場合
-                if ((isFalling || isStartingPosition) && distanceToSurface < 10) {
+                if (
+                    (isFalling || isStartingPosition) &&
+                    distanceToSurface < 10
+                ) {
                     isColliding = true;
                 }
             }
@@ -322,7 +332,11 @@ export class Player {
             }
 
             // 初期配置時の特別処理（ゲーム開始時に確実に足場の上に立っているようにするため）
-            if (isStartingPosition && isOverlappingHorizontally && !isOnAnyPlatform) {
+            if (
+                isStartingPosition &&
+                isOverlappingHorizontally &&
+                !isOnAnyPlatform
+            ) {
                 if (Math.abs(playerBottom - platformTop) < 20) {
                     this.y = platformTop - PLAYER_SIZE / 2;
                     this.velocity = 0;
