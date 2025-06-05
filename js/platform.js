@@ -28,18 +28,55 @@ export class Platform {
         this.baseSpeed = PLATFORM_SPEED; // 基本速度を保存（難易度調整用）
         this.sprite = null;
         this.type = Math.floor(window.random(PLATFORM_TYPE_COUNT)); // ランダムなプラットフォームタイプを選択
-    } /** 初期化処理（必要に応じて） */
-    setup() {
-        // Spriteを作成
-        this.sprite = new window.Sprite(
-            this.x + this.width / 2,
-            this.y + this.height / 2
-        );
-        this.sprite.width = this.width;
-        this.sprite.height = this.height;
-        this.sprite.immovable = true; // 静的なスプライト（動かない物体）
-        this.sprite.visible = false; // カスタム描画を使用するため、デフォルトのスプライト表示を無効化
-        this.sprite.collider = 'static'; // 静的なコライダーとして設定
+
+        // デバッグ用に一意のID（タイムスタンプベース）を割り当て
+        this._id =
+            Date.now().toString().slice(-5) + Math.floor(Math.random() * 100);
+    }
+    /** 初期化処理（必要に応じて） */ setup() {
+        try {
+            // p5.play v3.xでのスプライト作成
+            const centerX = this.x + this.width / 2;
+            const centerY = this.y + this.height / 2;
+
+            if (window.Sprite) {
+                // グローバル化されたSpriteクラスを使用
+                this.sprite = new window.Sprite(centerX, centerY);
+            } else {
+                console.error('Spriteクラスが見つかりません');
+                // ダミースプライトオブジェクト
+                this.sprite = {
+                    x: centerX,
+                    y: centerY,
+                    width: this.width,
+                    height: this.height,
+                    visible: false,
+                };
+                return;
+            }
+
+            // スプライトのプロパティを設定
+            this.sprite.width = this.width;
+            this.sprite.height = this.height;
+            this.sprite.immovable = true; // 静的なスプライト（動かない物体）
+            this.sprite.visible = false; // カスタム描画を使用
+            this.sprite.collider = 'static'; // 静的なコライダーとして設定
+        } catch (e) {
+            console.error(
+                'プラットフォームスプライトの初期化中にエラーが発生しました:',
+                e
+            );
+            // ダミースプライトオブジェクト
+            const centerX = this.x + this.width / 2;
+            const centerY = this.y + this.height / 2;
+            this.sprite = {
+                x: centerX,
+                y: centerY,
+                width: this.width,
+                height: this.height,
+                visible: false,
+            };
+        }
     } /** プラットフォームの移動を更新 */
     update() {
         this.x -= this.speed;
@@ -122,18 +159,30 @@ export class Platform {
                 // 描画モードを戻す
                 window.rectMode(window.CENTER);
                 break;
+        } // デバッグモードが有効なら詳細な衝突判定枠を表示
+        if (window.debugMode) {
+            window.noFill();
+            window.stroke(0, 255, 0, 200); // 目立つ緑色
+            window.strokeWeight(2);
+            window.rect(centerX, centerY, this.width, this.height);
+
+            // デバッグ情報を表示
+            window.fill(255);
+            window.textSize(10);
+            window.textAlign(window.CENTER, window.CENTER);
+            window.text(`ID: ${this._id || 'N/A'}`, centerX, centerY - 10);
+            window.text(
+                `x:${Math.floor(this.x)},y:${Math.floor(this.y)}`,
+                centerX,
+                centerY + 10
+            );
+        } else {
+            // 通常モードではより控えめな枠線
+            window.noFill();
+            window.stroke(255, 255, 255, 50);
+            window.strokeWeight(1);
+            window.rect(centerX, centerY, this.width, this.height);
         }
-
-        // 衝突判定の境界を明確にするため、枠線を表示
-        window.noFill();
-        window.stroke(255, 255, 255, 100); // 少し明確な白色
-        window.strokeWeight(1);
-        window.rect(centerX, centerY, this.width, this.height);
-
-        // デバッグ情報を表示（オプション）
-        // window.fill(255);
-        // window.textSize(10);
-        // window.text(`x:${Math.floor(this.x)},y:${Math.floor(this.y)}`, centerX, centerY);
 
         window.pop(); // 描画スタイルを復元
     } // 個別の描画メソッドは draw() メソッドに統合されました
