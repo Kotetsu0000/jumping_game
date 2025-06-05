@@ -1,8 +1,14 @@
 // p5.jsとp5.playのグローバル関数をエクスポートするヘルパースクリプト
 // このスクリプトは、ES6モジュールとグローバルp5.js関数の橋渡しをします
 
-// デバッグモードの初期設定
+// デバッグモードの初期設定（キーボードの「D」キーでトグル可能）
 window.debugMode = false;
+
+// キーボード入力処理のため、グローバルにアクセス可能にする
+window.toggleDebugMode = function () {
+    window.debugMode = !window.debugMode;
+    console.log('デバッグモード: ' + (window.debugMode ? 'オン' : 'オフ'));
+};
 
 // p5とplanckのグローバル化を確認する関数
 function ensureGlobals() {

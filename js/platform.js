@@ -53,14 +53,17 @@ export class Platform {
                     visible: false,
                 };
                 return;
-            }
-
-            // スプライトのプロパティを設定
+            } // スプライトのプロパティを設定
             this.sprite.width = this.width;
             this.sprite.height = this.height;
             this.sprite.immovable = true; // 静的なスプライト（動かない物体）
             this.sprite.visible = false; // カスタム描画を使用
             this.sprite.collider = 'static'; // 静的なコライダーとして設定
+
+            // 衝突判定を確実にするための追加設定
+            if (typeof this.sprite.friction === 'number') {
+                this.sprite.friction = 0; // 摩擦なし
+            }
         } catch (e) {
             console.error(
                 'プラットフォームスプライトの初期化中にエラーが発生しました:',
@@ -79,17 +82,29 @@ export class Platform {
         }
     } /** プラットフォームの移動を更新 */
     update() {
-        this.x -= this.speed;
-
-        // スプライトの位置も更新
+        this.x -= this.speed; // スプライトの位置も更新
         if (this.sprite) {
-            this.sprite.x = this.x + this.width / 2;
-            this.sprite.y = this.y + this.height / 2;
+            // 中心座標を計算
+            const centerX = this.x + this.width / 2;
+            const centerY = this.y + this.height / 2;
+
+            // スプライトの位置を更新
+            this.sprite.x = centerX;
+            this.sprite.y = centerY;
 
             // スプライトのサイズを再設定（衝突判定のため）
             this.sprite.width = this.width;
             this.sprite.height = this.height;
-            this.sprite.debug = false; // デバッグ表示をオフ（必要に応じてオンにする）
+            this.sprite.immovable = true; // 毎フレーム静的なスプライト設定を確保
+            this.sprite.collider = 'static'; // 衝突判定タイプも再確認
+
+            // デバッグ表示の設定
+            this.sprite.debug = window.debugMode; // デバッグモードに応じて表示を切り替え
+
+            // p5.playのバージョンによって異なる可能性のあるプロパティを安全に設定
+            if (typeof this.sprite.friction !== 'undefined') {
+                this.sprite.friction = 0; // 摩擦なし
+            }
         }
     }
 
