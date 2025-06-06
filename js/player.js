@@ -17,8 +17,7 @@ export class Player {
      * プレイヤーを初期化する
      * @param {number} x プレイヤーの初期X座標
      * @param {number} y プレイヤーの初期Y座標
-     */
-    constructor(x, y) {
+     */ constructor(x, y) {
         this.initialX = x;
         this.initialY = y;
         this.x = x;
@@ -39,6 +38,7 @@ export class Player {
 
         // ジャンプボタンの状態
         this.jumpBtnPrevPress = false;
+        this.jumpButtonHoldFrames = 0; // ジャンプボタンを押しているフレーム数
         // マリオスタイルのジャンプ状態
         this.movementState = 'OnGround'; // 'OnGround' or 'Jumping'
         this.jumpStartFrame = 0; // ジャンプ開始時のフレーム番号
@@ -287,7 +287,6 @@ export class Player {
         // ボタンの状態を保存
         this.jumpBtnPrevPress = jumpBtnPress;
     }
-
     /**
      * ジャンプ入力の判定
      * @param {boolean} jumpBtnPress ジャンプボタンが押されているか
@@ -296,8 +295,15 @@ export class Player {
         // ジャンプボタンの状態をデバッグ出力（フレーム数で制限）
         if (window.frameCount % 60 === 0) {
             console.log(
-                `ボタン状態: 現在=${jumpBtnPress}, 前回=${this.jumpBtnPrevPress}, grounded=${this.grounded}, state=${this.movementState}`
+                `ボタン状態: 現在=${jumpBtnPress}, 前回=${this.jumpBtnPrevPress}, grounded=${this.grounded}, state=${this.movementState}, 長押しフレーム=${this.jumpButtonHoldFrames}`
             );
+        }
+
+        // ボタンが押されている状態を更新
+        if (jumpBtnPress && this.grounded) {
+            this.jumpButtonHoldFrames++;
+        } else if (!jumpBtnPress) {
+            this.jumpButtonHoldFrames = 0;
         }
 
         // 前回押されていなくて、今回押された場合のみジャンプ処理を行う
@@ -314,8 +320,31 @@ export class Player {
         } else if (jumpBtnPress && !this.jumpBtnPrevPress && !this.grounded) {
             console.log('ジャンプ拒否: 空中にいる');
         }
-    }
 
+        // 長押し効果の適用（ジャンプ中かつボタンが押されている場合）
+        if (this.movementState === 'Jumping' && jumpBtnPress) {
+            const framesSinceJump = window.frameCount - this.jumpStartFrame;
+            // 効果フレーム数内であれば上昇力を増加させる
+            if (framesSinceJump <= MARIO_JUMP_PARAMS.HOLD_JUMP_FRAMES) {
+                // 上昇中のみ効果を適用
+                if (this.verticalSpeed < 0) {
+                    // 上昇速度を維持する効果（小さい値ほど速度減少が遅くなる）
+                    this.verticalForce = Math.max(
+                        this.verticalForce -
+                            MARIO_JUMP_PARAMS.HOLD_JUMP_POWER_FACTOR,
+                        MARIO_JUMP_PARAMS.VERTICAL_FORCE[4] * 0.8 // 最低値の設定
+                    );
+
+                    // デバッグ情報（50フレームごとに表示）
+                    if (framesSinceJump % 5 === 0) {
+                        console.log(
+                            `長押し効果適用中: 上昇力=${this.verticalForce}, フレーム=${framesSinceJump}`
+                        );
+                    }
+                }
+            }
+        }
+    }
     /**
      * ジャンプ準備処理
      */
@@ -327,13 +356,28 @@ export class Player {
         this.movementState = 'Jumping';
         this.grounded = false; // 即座に接地状態を解除
 
-        // 横速度に基づいてジャンプパラメータのインデックスを選択
-        let idx = 0;
+        // ボタン長押し時間に基づいてジャンプ強度を選択
+        // 長押しフレーム数が多いほど強力なジャンプインデックスを選択
+        let idx = 0; // デフォルトは小ジャンプ
+
+        if (this.jumpButtonHoldFrames >= 15) {
+            idx = 4; // 最大ジャンプ
+        } else if (this.jumpButtonHoldFrames >= 10) {
+            idx = 3; // 大ジャンプ
+        } else if (this.jumpButtonHoldFrames >= 5) {
+            idx = 2; // 中ジャンプ
+        } else if (this.jumpButtonHoldFrames >= 2) {
+            idx = 1; // 小～中ジャンプ
+        }
+
+        // 横速度も考慮（オプション - 現在はコメントアウト）
+        /*
         HORIZONTAL_SPEED_THRESHOLDS.forEach((threshold, i) => {
             if (this.horizontalSpeed >= threshold) {
-                idx = Math.min(i + 1, 4); // インデックスは0-4の範囲に制限
+                idx = Math.min(idx + 1, 4); // インデックスは0-4の範囲に制限
             }
         });
+        */
 
         // ジャンプパラメータを設定
         this.verticalForce = MARIO_JUMP_PARAMS.VERTICAL_FORCE[idx];
@@ -342,11 +386,9 @@ export class Player {
             MARIO_JUMP_PARAMS.INITIAL_FORCE_DECIMAL[idx];
         this.verticalSpeed = MARIO_JUMP_PARAMS.INITIAL_SPEEDS[idx];
 
-        if (window.debugMode) {
-            console.log(
-                `ジャンプ開始: 初速=${this.verticalSpeed}, 上昇力=${this.verticalForce}`
-            );
-        }
+        console.log(
+            `ジャンプ開始: 長押しフレーム=${this.jumpButtonHoldFrames}, インデックス=${idx}, 初速=${this.verticalSpeed}, 上昇力=${this.verticalForce}`
+        );
     }
 
     /**

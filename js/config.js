@@ -15,15 +15,18 @@ export const GRAVITY = 0.8; // 互換性のために残しておく（新しい�
 // マリオスタイルのジャンプパラメータ
 export const MARIO_JUMP_PARAMS = {
     // 初期ジャンプ速度 - 横速度に応じて選択される（より高く飛ぶために値を大きくする）
-    INITIAL_SPEEDS: [-11, -11, -11, -13, -13],
+    INITIAL_SPEEDS: [-11, -14, -16, -18, -20],
     // 上昇中の加速度係数（小さくすると上昇時間が長くなる）
-    VERTICAL_FORCE: [0x16, 0x16, 0x16, 0x20, 0x20],
+    VERTICAL_FORCE: [0x16, 0x14, 0x12, 0x10, 0x0e],
     // 落下中の加速度係数（必ず落下するように十分大きな値に設定）
-    VERTICAL_FALL_FORCE: [0x80, 0x80, 0x70, 0x90, 0x90],
+    VERTICAL_FALL_FORCE: [0x80, 0x80, 0x70, 0x80, 0x80],
     // 初期加速度の小数部分
     INITIAL_FORCE_DECIMAL: [0x40, 0x40, 0x40, 0x40, 0x40],
     // 落下速度上限（必ず落下するように十分な値に設定）
     DOWN_SPEED_LIMIT: 8,
+    // ボタン長押し効果の設定
+    HOLD_JUMP_FRAMES: 15, // 長押し効果が続くフレーム数
+    HOLD_JUMP_POWER_FACTOR: 0.4, // 長押し時の追加パワー係数
 };
 
 // 横方向の移動速度しきい値（ジャンプパラメータ選択用）
