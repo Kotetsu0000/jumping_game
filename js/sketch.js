@@ -198,10 +198,10 @@ function initializeGame() {
     if (window.debugMode) {
         console.log('デバッグモードでゲームを初期化しました');
         console.log('Player:', window.gameManager.player);
-    }
-
-    // 衝突判定デバッグモード(デフォルトはオフ)
+    } // 衝突判定デバッグモード(デフォルトはオフ)
     window.collisionDebugMode = false;
+
+    console.log('衝突判定システムを最適化しました');
 }
 
 /**
@@ -439,9 +439,7 @@ window.keyPressed = function () {
             }`
         );
         return;
-    }
-
-    // シークレットモード: 衝突判定の詳細分析モード (Cキー)
+    } // シークレットモード: 衝突判定の詳細分析モード (Cキー)
     if (kb.presses('c') || kb.presses('C')) {
         window.collisionDebugMode = !window.collisionDebugMode;
         console.log(
@@ -452,6 +450,24 @@ window.keyPressed = function () {
         if (window.collisionDebugMode && !window.debugMode) {
             window.debugMode = true;
             console.log('デバッグモードも自動的に有効化されました');
+        }
+
+        // プレイヤーと足場のスプライトのデバッグ表示を更新
+        if (gameManager) {
+            if (gameManager.player && gameManager.player.sprite) {
+                gameManager.player.sprite.debug = window.collisionDebugMode;
+            }
+
+            if (
+                gameManager.stageGenerator &&
+                gameManager.stageGenerator.platforms
+            ) {
+                gameManager.stageGenerator.platforms.forEach((platform) => {
+                    if (platform.sprite) {
+                        platform.sprite.debug = window.collisionDebugMode;
+                    }
+                });
+            }
         }
         return;
     }

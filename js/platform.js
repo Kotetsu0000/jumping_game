@@ -90,30 +90,23 @@ export class Platform {
             const centerX = this.x + this.width / 2;
             const centerY = this.y + this.height / 2;
 
-            // スプライトの位置を更新
+            // スプライトの位置と寸法を更新
             this.sprite.x = centerX;
             this.sprite.y = centerY;
-
-            // スプライトのサイズを再設定（衝突判定のため）
             this.sprite.width = this.width;
             this.sprite.height = this.height;
 
             // 物理的な性質を設定
-            this.sprite.static = true; // 静的なスプライト（動かない物体）として設定
+            this.sprite.static = true;
             this.sprite.collider = 'static'; // 静的な衝突判定として設定
 
-            // 追加の物理特性を設定（必要に応じて）
-            if (typeof this.sprite.friction === 'number') {
+            // 摩擦値を設定（存在する場合のみ）
+            if (typeof this.sprite.friction !== 'undefined') {
                 this.sprite.friction = 0; // 摩擦なし
             }
 
             // デバッグ表示の設定
-            this.sprite.debug = window.debugMode; // デバッグモードに応じて表示を切り替え
-
-            // p5.playのバージョンによって異なる可能性のあるプロパティを安全に設定
-            if (typeof this.sprite.friction !== 'undefined') {
-                this.sprite.friction = 0; // 摩擦なし
-            }
+            this.sprite.debug = window.collisionDebugMode || window.debugMode;
         }
     }
 
