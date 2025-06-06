@@ -95,12 +95,41 @@ export class GameManager {
                     console.log('新しいハイスコア: ' + this.highScore);
                 }
             } else {
-                // 難易度係数に応じてスコアを増加（最低1、最大は難易度の2倍）
-                const difficultyBonus = Math.ceil(
-                    this.stageGenerator.difficultyFactor
-                );
-                this.score += difficultyBonus;
+                // 進行距離と難易度に基づいてスコアを更新
+                this.updateScore();
             }
+        }
+    }
+
+    /**
+     * スコアを更新する
+     * 進行距離と難易度に基づいてスコアを計算
+     */
+    updateScore() {
+        // 基本スコアは難易度係数に基づく
+        const difficultyBonus = Math.ceil(this.stageGenerator.difficultyFactor);
+
+        // 進行距離に基づいたボーナス（足場の速度に応じて進んだ距離として計算）
+        const distanceBonus = Math.floor(this.stageGenerator.gameTime / 60); // 1秒あたり1ポイント
+
+        // 実際の距離メートルを計算（表示用）
+        this.distanceMeters = Math.floor(
+            (this.stageGenerator.gameTime *
+                this.stageGenerator.difficultyFactor) /
+                12
+        );
+
+        // 合計スコアを更新
+        const addedScore = difficultyBonus;
+        this.score += addedScore;
+
+        // 一定間隔でスコアデバッグ情報を表示
+        if (window.debugMode && this.stageGenerator.gameTime % 60 === 0) {
+            console.log(
+                `スコア更新: ${this.score}, 距離: ${
+                    this.distanceMeters
+                }m, 難易度: ${this.stageGenerator.difficultyFactor.toFixed(2)}`
+            );
         }
     }
     /**
@@ -146,44 +175,81 @@ export class GameManager {
                 window.height / 2 + 50
             );
         } else if (this.state === GAME_STATE.PLAYING) {
-            // スコア表示
+            // スコア表示パネル背景（半透明）
+            window.push();
+            window.fill(0, 0, 0, 100);
+            window.noStroke();
+            window.rectMode(window.CORNER);
+            window.rect(window.width - 200, 5, 190, 110, 5);
+            window.pop(); // スコア表示 - 位置調整
             window.textSize(FONT_SIZE_SCORE);
             window.textAlign(window.RIGHT, window.TOP);
+            window.fill(COLOR_PALETTE.SCORE);
             window.text(`スコア: ${this.score}`, window.width - 20, 50);
+
+            // 距離表示
+            window.textSize(FONT_SIZE_SCORE - 2);
+            window.text(
+                `距離: ${this.distanceMeters || 0}m`,
+                window.width - 20,
+                80
+            );
 
             // ハイスコア表示
             window.fill(COLOR_PALETTE.HIGH_SCORE);
             window.text(`ハイスコア: ${this.highScore}`, window.width - 20, 20);
         } else if (this.state === GAME_STATE.GAME_OVER) {
-            window.text('ゲームオーバー', window.width / 2, window.height / 3);
+            // ゲームオーバー画面の半透明背景
+            window.push();
+            window.fill(0, 0, 0, 180);
+            window.noStroke();
+            window.rectMode(window.CENTER);
+            window.rect(window.width / 2, window.height / 2, 400, 250, 10);
+            window.pop(); // ゲームオーバーテキスト（明るい色で表示）- 位置を上に調整
+            window.fill(COLOR_PALETTE.HIGH_SCORE);
+            window.text(
+                'ゲームオーバー',
+                window.width / 2,
+                window.height / 3 + 20
+            );
+
+            // スコア表示（白色で表示）- 位置を上に調整
             window.textSize(FONT_SIZE_TEXT);
+            window.fill(COLOR_PALETTE.SCORE);
             window.text(
                 `スコア: ${this.score}`,
                 window.width / 2,
-                window.height / 2 - 20
+                window.height / 2 - 10
+            ); // 距離表示を追加（白色で表示）- 位置を上に調整
+            window.text(
+                `走行距離: ${this.distanceMeters || 0}m`,
+                window.width / 2,
+                window.height / 2 + 20
             );
 
-            // ハイスコア表示（新記録かどうかで色を変える）
+            // ハイスコア表示（新記録かどうかで色を変える）- 位置を上に調整
             if (this.isNewHighScore) {
                 window.fill(COLOR_PALETTE.HIGH_SCORE);
                 window.text(
-                    `ハイスコア: ${this.highScore} - 新記録!`,
+                    `ハイスコア: ${this.highScore}  新記録!`,
                     window.width / 2,
-                    window.height / 2 + 20
+                    window.height / 2 + 50
                 );
             } else {
+                window.fill(COLOR_PALETTE.SCORE);
                 window.text(
                     `ハイスコア: ${this.highScore}`,
                     window.width / 2,
-                    window.height / 2 + 20
+                    window.height / 2 + 50
                 );
             }
 
-            window.fill(COLOR_PALETTE.TEXT);
+            // リトライメッセージ（白色で表示して視認性を高める）- 位置を上に調整
+            window.fill(COLOR_PALETTE.SCORE);
             window.text(
                 'スペースキーまたはクリックでリトライ',
                 window.width / 2,
-                window.height / 2 + 70
+                window.height / 2 + 90
             );
         }
     }
@@ -265,6 +331,7 @@ export class GameManager {
     resetGame() {
         this.state = GAME_STATE.START;
         this.score = 0;
+        this.distanceMeters = 0;
         this.isNewHighScore = false;
         this.player.reset();
         this.stageGenerator.reset();

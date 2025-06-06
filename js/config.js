@@ -59,7 +59,8 @@ export const COLOR_PALETTE = {
     PLATFORM_STONE: '#607D8B', // 石の足場
     PLATFORM_STONE_DETAIL: '#455A64', // 石の模様
     TEXT: '#333333', // 黒に近いテキスト
-    HIGH_SCORE: '#FF9800', // ハイスコア表示（オレンジ）
+    SCORE: '#FFFFFF', // スコア表示の色（白）
+    HIGH_SCORE: '#FFEB3B', // ハイスコア表示の色（黄色）
     UI_BACKGROUND: 'rgba(255, 255, 255, 0.7)', // 半透明の白色UI背景
 };
 
