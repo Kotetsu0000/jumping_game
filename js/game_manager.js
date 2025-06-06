@@ -62,10 +62,9 @@ export class GameManager {
      * ゲームの状態を更新する
      */ update() {
         if (this.state === GAME_STATE.PLAYING) {
-            this.stageGenerator.update();
-            // プレイヤー更新処理に足場の配列を渡す
+            this.stageGenerator.update(); // プレイヤー更新処理に足場の配列を渡す
             this.player.update(this.stageGenerator.platforms); // キー入力状態を更新（スペースキーが離されたらフラグをリセット）
-            if (!window.keyIsDown(32)) {
+            if (!kb.pressing(' ')) {
                 this.spaceKeyPressed = false;
             }
 
@@ -177,12 +176,12 @@ export class GameManager {
     }
     /**
      * キー入力処理
-     */
-    keyPressed() {
+     */ keyPressed() {
         if (this.state === GAME_STATE.START) {
             this.startGame();
         } else if (this.state === GAME_STATE.PLAYING) {
             // スペースキーが押された場合ジャンプ（連続入力防止）
+            // p5.jsの標準キーボード検出を使用
             if (window.keyCode === 32 && !this.spaceKeyPressed) {
                 // 32はスペースキーのキーコード
                 this.spaceKeyPressed = true; // キー状態をマーク
@@ -200,18 +199,20 @@ export class GameManager {
         if (this.state === GAME_STATE.START) {
             this.startGame();
         } else if (this.state === GAME_STATE.PLAYING) {
-            this.player.jump();
+            // 追加した専用のジャンプメソッドを呼び出す
+            if (this.player && typeof this.player.jump === 'function') {
+                this.player.jump();
+            }
         } else if (this.state === GAME_STATE.GAME_OVER) {
             this.resetGame();
         }
     }
-
     /**
      * キーが離された時の処理
      */
     keyReleased() {
         // スペースキーが離されたらフラグをリセット
-        if (window.keyCode === 32) {
+        if (window.key === ' ' || window.keyCode === 32) {
             this.spaceKeyPressed = false;
         }
     }
@@ -242,13 +243,18 @@ export class GameManager {
             this.player.velocity = 0;
         }
     }
-
     /**
      * ゲームをリセットする
      */
     resetGame() {
         this.state = GAME_STATE.START;
+        this.score = 0;
+        this.isNewHighScore = false;
         this.player.reset();
         this.stageGenerator.reset();
+
+        if (window.debugMode) {
+            console.log('ゲームをリセットしました');
+        }
     }
 }

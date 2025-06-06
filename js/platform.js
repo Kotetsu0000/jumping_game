@@ -56,7 +56,7 @@ export class Platform {
             } // スプライトのプロパティを設定
             this.sprite.width = this.width;
             this.sprite.height = this.height;
-            this.sprite.immovable = true; // 静的なスプライト（動かない物体）
+            this.sprite.static = true; // 静的なスプライト（動かない物体）- immovableは非推奨
             this.sprite.visible = false; // カスタム描画を使用
             this.sprite.collider = 'static'; // 静的なコライダーとして設定
 
@@ -90,12 +90,10 @@ export class Platform {
 
             // スプライトの位置を更新
             this.sprite.x = centerX;
-            this.sprite.y = centerY;
-
-            // スプライトのサイズを再設定（衝突判定のため）
+            this.sprite.y = centerY; // スプライトのサイズを再設定（衝突判定のため）
             this.sprite.width = this.width;
             this.sprite.height = this.height;
-            this.sprite.immovable = true; // 毎フレーム静的なスプライト設定を確保
+            this.sprite.static = true; // 毎フレーム静的なスプライト設定を確保（immovableは非推奨）
             this.sprite.collider = 'static'; // 衝突判定タイプも再確認
 
             // デバッグ表示の設定

@@ -5,8 +5,11 @@ import { CANVAS_WIDTH, CANVAS_HEIGHT, COLOR_PALETTE } from './config.js';
 // p5.js関数は window経由で直接アクセスする
 
 // ゲーム変数
-let gameManager = null;
+window.gameManager = null; // グローバル変数として公開
 let canvasCreated = false;
+
+// デバッグモード（初期設定、URLパラメータで制御可能）
+window.debugMode = window.debugMode || false;
 
 // パフォーマンスモニタリング用の変数
 let frameRates = [];
@@ -98,6 +101,7 @@ window.setup = function () {
     // すべて準備ができているので、ゲームを初期化
     initializeGame();
 };
+
 /**
  * p5.playを使ったゲームの初期化を試みる関数
  * セットアップ時にライブラリがまだ準備できていない場合に呼び出される
@@ -159,18 +163,30 @@ function initializeGame() {
     window.background(COLOR_PALETTE.BACKGROUND);
 
     // GameManagerの初期化
-    console.log('GameManagerを初期化します');
-    try {
-        gameManager = new GameManager();
-        gameManager.setup();
-        console.log('ゲームの初期化が完了しました');
-    } catch (error) {
-        console.error('GameManager初期化時にエラーが発生しました:', error);
-        window.text(
-            'エラー: ゲーム初期化失敗 - ' + error.message,
-            CANVAS_WIDTH / 2,
-            CANVAS_HEIGHT / 2
+    window.gameManager = new GameManager();
+    window.gameManager.setup(); // パフォーマンスモニタリングの初期化
+    lastFrameTime = window.millis();
+
+    // Ensure kb is globally available
+    if (typeof window.kb === 'object') {
+        window.kb = window.kb;
+        console.log('p5.play keyboard controller (kb) is available');
+    } else {
+        console.warn(
+            'p5.play keyboard controller (kb) not found, using fallback'
         );
+        // Simple fallback for keyboard input
+        window.kb = {
+            presses: function (key) {
+                return window.keyIsPressed && window.key === key;
+            },
+        };
+    }
+
+    // デバッグ情報を表示
+    if (window.debugMode) {
+        console.log('デバッグモードでゲームを初期化しました');
+        console.log('Player:', window.gameManager.player);
     }
 }
 
@@ -394,14 +410,14 @@ function getFPSColor(fps) {
  */
 window.keyPressed = function () {
     // デバッグモード切替 (Dキー)
-    if (window.key === 'd' || window.key === 'D') {
+    if (kb.presses('d') || kb.presses('D')) {
         window.debugMode = !window.debugMode;
         console.log(`デバッグモード: ${window.debugMode ? 'オン' : 'オフ'}`);
         return;
     }
 
     // パフォーマンス統計情報の表示切替 (Pキー)
-    if (window.key === 'p' || window.key === 'P') {
+    if (kb.presses('p') || kb.presses('P')) {
         showPerformanceStats = !showPerformanceStats;
         console.log(
             `パフォーマンス統計情報: ${
@@ -412,7 +428,7 @@ window.keyPressed = function () {
     }
 
     // 初期化に失敗した場合、Rキーでリロード
-    if (!gameManager && (window.key === 'r' || window.key === 'R')) {
+    if (!gameManager && (kb.presses('r') || kb.presses('R'))) {
         location.reload();
         return;
     }

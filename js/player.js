@@ -3,9 +3,10 @@
  */
 import {
     PLAYER_SIZE,
-    GRAVITY,
-    PLAYER_JUMP_FORCE,
     COLOR_PALETTE,
+    MARIO_JUMP_PARAMS,
+    HORIZONTAL_SPEED_THRESHOLDS,
+    PLATFORM_SPEED,
 } from './config.js';
 
 // ドット絵アニメーション用の定数
@@ -22,22 +23,48 @@ export class Player {
         this.initialY = y;
         this.x = x;
         this.y = y;
+
+        // 従来の物理システム用変数（互換性のために残す）
         this.velocity = 0;
         this.grounded = false;
+
+        // マリオスタイルのジャンプパラメータ
+        this.verticalPositionOrigin = 0; // ジャンプ開始時の位置
+        this.verticalSpeed = 0; // 現在の速度
+        this.verticalForce = 0; // 現在の加速度
+        this.verticalForceFall = 0; // 下降時の加速度
+        this.verticalForceDecimalPart = 0; // 加速度の小数部分
+        this.correctionValue = 0; // 補正値
+        this.horizontalSpeed = PLATFORM_SPEED; // 横方向の見かけの速度（本ゲームは横スクロールなのでプラットフォームの速度を使用）
+
+        // ジャンプボタンの状態
+        this.jumpBtnPrevPress = false;
+        // マリオスタイルのジャンプ状態
+        this.movementState = 'OnGround'; // 'OnGround' or 'Jumping'
+        this.jumpStartFrame = 0; // ジャンプ開始時のフレーム番号
+
         this.sprite = null;
         this.frameCount = 0; // アニメーション用フレームカウンタ
         this.animationSpeed = 0.1; // アニメーションの速度
         this.pixelSize = PLAYER_SIZE / PIXEL_GRID_SIZE; // ドット（ピクセル）のサイズ
+
+        // ジャンプアニメーション用の状態変数
+        this.isJumping = false;
     }
 
     /**
      * プレイヤーの初期設定を行う
-     */ setup() {
+     */
+    setup() {
         // 初期位置と速度を設定
         this.x = this.initialX;
         this.y = this.initialY;
         this.velocity = 0;
         this.grounded = true; // 初期状態では地面に接地していると仮定
+
+        // マリオスタイルのジャンプパラメータをリセット
+        this.resetJumpParams();
+
         try {
             // p5.play v3.xでのスプライト作成方法
             // Spriteコンストラクタは現在のp5インスタンスのメソッドとして存在する
@@ -84,10 +111,22 @@ export class Player {
                 },
             };
         }
-
-        // ジャンプアニメーション用の状態変数
-        this.isJumping = false;
     }
+
+    /**
+     * マリオスタイルのジャンプパラメータをリセットする
+     */
+    resetJumpParams() {
+        this.verticalSpeed = 0;
+        this.verticalForce = 0;
+        this.verticalForceFall = 0;
+        this.verticalForceDecimalPart = 0;
+        this.movementState = 'OnGround';
+        this.correctionValue = 0;
+        this.verticalPositionOrigin = this.y;
+        this.jumpStartFrame = 0;
+    }
+
     /**
      * ドット絵風キャラクターを描画する
      */
@@ -185,6 +224,7 @@ export class Player {
 
         window.pop();
     }
+
     /**
      * プレイヤーの状態を更新する
      * @param {Array} platforms 足場オブジェクトの配列
@@ -192,11 +232,9 @@ export class Player {
         // 前のフレームの接地状態を保存
         const wasGrounded = this.grounded;
 
-        // 重力を適用（接地状態でなければ）
-        if (!this.grounded) {
-            this.velocity += GRAVITY;
-            this.y += this.velocity;
-        }
+        // マリオスタイルの移動処理
+        // p5.playの新しいバージョンではkb.pressingを使用
+        this.movement(kb.pressing(' ') || window.mouseIsPressed);
 
         // 衝突判定の前にスプライトの位置を更新（物理位置と同期）
         if (this.sprite) {
@@ -210,9 +248,6 @@ export class Player {
             // デバッグモードの場合、衝突判定の可視化を有効にする
             this.sprite.debug = window.debugMode ? true : false;
         }
-
-        // 着地状態をリセット（毎フレームで再判定）
-        this.grounded = false;
 
         // 足場との衝突判定
         this.checkCollision(platforms);
@@ -237,11 +272,179 @@ export class Player {
             }
         }
     }
+
+    /**
+     * マリオスタイルの移動処理
+     * @param {boolean} jumpBtnPress ジャンプボタンが押されているか
+     */
+    movement(jumpBtnPress) {
+        // ジャンプ判定
+        this.jumpCheck(jumpBtnPress);
+
+        // マリオスタイルの物理演算処理
+        this.moveProcess(jumpBtnPress);
+
+        // ボタンの状態を保存
+        this.jumpBtnPrevPress = jumpBtnPress;
+    }
+
+    /**
+     * ジャンプ入力の判定
+     * @param {boolean} jumpBtnPress ジャンプボタンが押されているか
+     */
+    jumpCheck(jumpBtnPress) {
+        // 前回押されていなくて、今回押された場合のみジャンプ処理を行う
+        if (jumpBtnPress && !this.jumpBtnPrevPress && this.grounded) {
+            // 接地状態でボタンが押されたらジャンプ開始
+            if (this.movementState === 'OnGround') {
+                this.preparingJump();
+                if (window.debugMode) {
+                    console.log('ジャンプ開始！');
+                }
+            }
+        }
+    }
+
+    /**
+     * ジャンプ準備処理
+     */
+    preparingJump() {
+        this.verticalForceDecimalPart = 0;
+        this.verticalPositionOrigin = this.y;
+        this.jumpStartFrame = window.frameCount || 0; // ジャンプ開始フレームを記録
+
+        this.movementState = 'Jumping';
+        this.grounded = false; // 即座に接地状態を解除
+
+        // 横速度に基づいてジャンプパラメータのインデックスを選択
+        let idx = 0;
+        HORIZONTAL_SPEED_THRESHOLDS.forEach((threshold, i) => {
+            if (this.horizontalSpeed >= threshold) {
+                idx = Math.min(i + 1, 4); // インデックスは0-4の範囲に制限
+            }
+        });
+
+        // ジャンプパラメータを設定
+        this.verticalForce = MARIO_JUMP_PARAMS.VERTICAL_FORCE[idx];
+        this.verticalForceFall = MARIO_JUMP_PARAMS.VERTICAL_FALL_FORCE[idx];
+        this.verticalForceDecimalPart =
+            MARIO_JUMP_PARAMS.INITIAL_FORCE_DECIMAL[idx];
+        this.verticalSpeed = MARIO_JUMP_PARAMS.INITIAL_SPEEDS[idx];
+
+        if (window.debugMode) {
+            console.log(
+                `ジャンプ開始: 初速=${this.verticalSpeed}, 上昇力=${this.verticalForce}`
+            );
+        }
+    }
+
+    /**
+     * マリオスタイルの物理演算処理
+     * @param {boolean} jumpBtnPress ジャンプボタンが押されているか
+     */
+    moveProcess(jumpBtnPress) {
+        if (this.movementState === 'OnGround') {
+            return; // 接地状態なら何もしない
+        }
+
+        // 速度がプラスなら画面下へ進んでいるものとして落下状態の加速度に切り替える
+        if (this.verticalSpeed >= 0) {
+            this.verticalForce = this.verticalForceFall;
+        } else {
+            // ボタンが離された＆上昇中？
+            if (!jumpBtnPress && this.jumpBtnPrevPress) {
+                // 落下時の加速度値に切り替える（すぐに落下開始するように）
+                this.verticalForce = this.verticalForceFall;
+            }
+
+            // ジャンプ力が弱まっていくように
+            const jumpDuration = this.verticalPositionOrigin - this.y;
+            if (jumpDuration >= 50) {
+                // 一定高度以上は必ず落下加速度に切り替え
+                this.verticalForce = this.verticalForceFall;
+            }
+        }
+
+        // 物理演算
+        this.physics();
+
+        // 滞空時間が長すぎる場合の緊急落下処理
+        const airTime = window.frameCount - this.jumpStartFrame;
+        if (airTime > 120) {
+            // 約2秒間滞空したら強制的に落下速度を上げる
+            this.verticalSpeed = Math.max(this.verticalSpeed, 2);
+            if (window.debugMode) {
+                console.log('長時間滞空状態を検知: 落下処理強化');
+            }
+        }
+    }
+
+    /**
+     * マリオスタイルの物理演算
+     */
+    physics() {
+        // 前の位置を保存（デバッグ用）
+        const prevY = this.y;
+
+        // 累積計算での補正値
+        let cy = 0;
+        this.correctionValue += this.verticalForceDecimalPart;
+        if (this.correctionValue >= 256) {
+            this.correctionValue -= 256;
+            cy = 1;
+        }
+
+        // 速度を加算 (累積計算での補正値も加算)
+        this.y += this.verticalSpeed + cy;
+
+        // 小数点部への加算
+        // オーバーフローしたら、速度が加算される。その時、加速度の整数部は0に戻される
+        this.verticalForceDecimalPart += this.verticalForce;
+        if (this.verticalForceDecimalPart >= 256) {
+            this.verticalForceDecimalPart -= 256;
+            this.verticalSpeed++;
+        }
+
+        // 落下速度制限チェック - 必ず適用されるようにする
+        if (this.verticalSpeed >= MARIO_JUMP_PARAMS.DOWN_SPEED_LIMIT) {
+            this.verticalSpeed = MARIO_JUMP_PARAMS.DOWN_SPEED_LIMIT;
+            this.verticalForceDecimalPart = 0x00;
+        }
+
+        // 従来のvelocity変数も更新（互換性のため）
+        this.velocity = this.verticalSpeed;
+
+        // 位置変化がない場合の対策（浮遊バグ防止）
+        if (
+            Math.abs(this.y - prevY) < 0.1 &&
+            !this.grounded &&
+            this.verticalSpeed >= 0
+        ) {
+            // 静止状態になってしまったら少し押し下げる
+            this.y += 1;
+            this.verticalSpeed = Math.max(1, this.verticalSpeed);
+            if (window.debugMode) {
+                console.log('静止状態検知: 位置調整');
+            }
+        }
+    }
+
     /**
      * 足場との衝突判定
      * @param {Array} platforms 足場オブジェクトの配列
-     */ checkCollision(platforms) {
-        if (!platforms || platforms.length === 0) return;
+     */
+    checkCollision(platforms) {
+        if (!platforms || platforms.length === 0) {
+            // 足場がない場合は接地状態を解除
+            if (this.grounded) {
+                this.grounded = false;
+                this.movementState = 'Jumping';
+                if (window.debugMode) {
+                    console.log('足場なし: 空中状態に設定');
+                }
+            }
+            return;
+        }
 
         // 前回の接地状態を保存
         const isStartingPosition = Math.abs(this.velocity) < 0.1;
@@ -263,9 +466,9 @@ export class Player {
             ) {
                 return false;
             }
-            // プレイヤーから縦方向に遠すぎる足場は無視
+            // プレイヤーから縦方向に遠すぎる足場は無視（距離を広げて確実に足場を検出）
             const verticalDistance = Math.abs(platform.y - this.y);
-            return verticalDistance < PLAYER_SIZE * 3;
+            return verticalDistance < PLAYER_SIZE * 5;
         });
 
         // 近くの足場に対して衝突判定を実行
@@ -300,13 +503,13 @@ export class Player {
             // p5.playの衝突判定が失敗した場合や結果が不正確な場合、手動での衝突判定を実行
             if (!isColliding && isOverlappingHorizontally) {
                 // 着地判定の条件を単純化
-                const isFalling = this.velocity >= 0;
+                const isFalling = this.verticalSpeed >= 0;
                 const distanceToSurface = Math.abs(playerBottom - platformTop);
 
-                // 落下中で足場の表面に近い場合
+                // 落下中で足場の表面に近い場合 (判定距離を増やして確実に検出)
                 if (
                     (isFalling || isStartingPosition) &&
-                    distanceToSurface < 10
+                    distanceToSurface < 15
                 ) {
                     isColliding = true;
                 }
@@ -315,12 +518,22 @@ export class Player {
             // 衝突している場合、着地処理を行う
             if (isColliding) {
                 // 上からの衝突の場合のみ着地と判定（横や下からぶつかった場合は無視）
-                if (prevPlayerBottom <= platformTop + 5 || isStartingPosition) {
+                // 判定を緩和して確実に着地するように
+                if (
+                    prevPlayerBottom <= platformTop + 10 ||
+                    isStartingPosition ||
+                    this.verticalSpeed >= 0
+                ) {
                     // 足場の上に位置を補正
                     this.y = platformTop - PLAYER_SIZE / 2;
                     this.velocity = 0;
                     this.grounded = true;
                     isOnAnyPlatform = true;
+
+                    // マリオスタイルのジャンプ状態も更新
+                    this.movementState = 'OnGround';
+                    this.verticalSpeed = 0;
+                    this.verticalForceDecimalPart = 0;
 
                     if (window.debugMode) {
                         console.log(
@@ -342,6 +555,11 @@ export class Player {
                     this.velocity = 0;
                     this.grounded = true;
                     isOnAnyPlatform = true;
+
+                    // マリオスタイルのジャンプ状態も更新
+                    this.movementState = 'OnGround';
+                    this.verticalSpeed = 0;
+
                     if (window.debugMode) {
                         console.log('初期位置で足場に着地');
                     }
@@ -351,13 +569,71 @@ export class Player {
         }
 
         // 着地状態の更新（いずれの足場にも乗っていなければ空中にいる）
-        if (this.grounded && !isOnAnyPlatform && this.velocity >= 0) {
+        if (this.grounded && !isOnAnyPlatform) {
             this.grounded = false;
+            this.movementState = 'Jumping';
+
+            // 落下開始時に少し下向きの初速を与える（停滞防止）
+            if (this.velocity <= 0) {
+                this.verticalSpeed = 0.5;
+                this.velocity = 0.5;
+            }
+
             if (window.debugMode) {
                 console.log('足場から離れた');
             }
         }
+
+        // 浮遊状態チェック - 長時間同じ場所にいるなら強制的に落下させる
+        if (
+            this.grounded === false &&
+            Math.abs(this.verticalSpeed) < 0.1 &&
+            this.movementState === 'Jumping'
+        ) {
+            this.verticalSpeed = 1;
+            this.velocity = 1;
+            if (window.debugMode) {
+                console.log('浮遊状態検知: 落下処理');
+            }
+        }
     }
+
+    /**
+     * 外部からのジャンプ要求に対応するメソッド
+     */
+    jump() {
+        // 接地状態の場合のみジャンプを実行
+        if (this.grounded && this.movementState === 'OnGround') {
+            this.preparingJump();
+            if (window.debugMode) {
+                console.log('外部からジャンプが要求されました！');
+            }
+        }
+    }
+
+    /**
+     * プレイヤーの状態をリセットする
+     * ゲームをリセットする際に呼び出される
+     */
+    reset() {
+        // 初期位置と速度を設定
+        this.x = this.initialX;
+        this.y = this.initialY;
+        this.velocity = 0;
+        this.grounded = true;
+
+        // マリオスタイルのジャンプパラメータをリセット
+        this.resetJumpParams();
+
+        // アニメーション状態をリセット
+        this.frameCount = 0;
+        this.isJumping = false;
+
+        if (window.debugMode) {
+            console.log('プレイヤー状態をリセットしました');
+        }
+    }
+
     /**
      * プレイヤーを描画する
      * issueの命名規則に合わせて、display()メソッドとして定義
@@ -390,49 +666,15 @@ export class Player {
                 0,
                 -PLAYER_SIZE
             );
-            window.text(`v:${this.velocity.toFixed(1)}`, 0, -PLAYER_SIZE - 12);
-            window.text(`g:${this.grounded ? 'Y' : 'N'}`, 0, -PLAYER_SIZE - 24);
-        } else {
-            // 通常モードではより控えめな枠線
-            window.noFill();
-            window.stroke(255, 255, 255, 50);
-            window.strokeWeight(1);
-            window.rect(0, 0, PLAYER_SIZE, PLAYER_SIZE);
+            window.text(
+                `v:${this.verticalSpeed.toFixed(1)},g:${
+                    this.grounded ? 'YES' : 'NO'
+                }`,
+                0,
+                -PLAYER_SIZE - 12
+            );
         }
 
         window.pop();
-    }
-
-    /**
-     * 下位互換性のために draw() も維持（他のコンポーネントと一貫性を保つため）
-     */
-    draw() {
-        this.display();
-    }
-
-    /**
-     * プレイヤーのジャンプ動作を実行する
-     */
-    jump() {
-        // 地面や足場の上にいる場合のみジャンプ可能
-        if (this.grounded) {
-            this.velocity = -PLAYER_JUMP_FORCE;
-            this.grounded = false;
-        }
-    }
-
-    /**
-     * プレイヤーの状態をリセットする
-     */ reset() {
-        this.x = this.initialX;
-        this.y = this.initialY;
-        this.velocity = 0;
-        this.grounded = true; // リセット時も接地状態からスタート// Spriteがすでに存在する場合は位置をリセット
-        if (this.sprite) {
-            this.sprite.x = this.x;
-            this.sprite.y = this.y;
-            this.sprite.height = PLAYER_SIZE;
-            this.isJumping = false;
-        }
     }
 }

@@ -9,8 +9,26 @@ export const CANVAS_HEIGHT = 600;
 
 // プレイヤー設定
 export const PLAYER_SIZE = 30;
-export const PLAYER_JUMP_FORCE = 20;
-export const GRAVITY = 0.8;
+export const PLAYER_JUMP_FORCE = 20; // 互換性のために残しておく（新しいジャンプシステムでは使用しない）
+export const GRAVITY = 0.8; // 互換性のために残しておく（新しいジャンプシステムでは使用しない）
+
+// マリオスタイルのジャンプパラメータ
+export const MARIO_JUMP_PARAMS = {
+    // 初期ジャンプ速度 - 横速度に応じて選択される（より高く飛ぶために値を大きくする）
+    INITIAL_SPEEDS: [-6, -6, -6, -7, -7],
+    // 上昇中の加速度係数（小さくすると上昇時間が長くなる）
+    VERTICAL_FORCE: [0x18, 0x18, 0x16, 0x20, 0x20],
+    // 落下中の加速度係数（必ず落下するように十分大きな値に設定）
+    VERTICAL_FALL_FORCE: [0x90, 0x90, 0x80, 0xa0, 0xa0],
+    // 初期加速度の小数部分
+    INITIAL_FORCE_DECIMAL: [0x40, 0x40, 0x40, 0x40, 0x40],
+    // 落下速度上限（必ず落下するように十分な値に設定）
+    DOWN_SPEED_LIMIT: 6,
+};
+
+// 横方向の移動速度しきい値（ジャンプパラメータ選択用）
+export const HORIZONTAL_SPEED_THRESHOLDS = [0x09, 0x10, 0x19, 0x1c];
+
 export const INITIAL_PLAYER_X = 200;
 export const INITIAL_PLAYER_Y = 300;
 

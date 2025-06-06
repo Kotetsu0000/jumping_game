@@ -522,9 +522,15 @@ export class StageGenerator {
     }
 
     /**
-     * プラットフォームの状態をリセットする
+     * ステージジェネレーターのリセット
+     * ゲームをリセットする際に呼び出される
      */
     reset() {
+        // 既存のsetup()メソッドを呼び出してリセット処理を行う
         this.setup();
+
+        if (window.debugMode) {
+            console.log('ステージジェネレーターをリセットしました');
+        }
     }
 }
