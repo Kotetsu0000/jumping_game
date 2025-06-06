@@ -223,17 +223,17 @@ export class Player {
         }
 
         window.pop();
-    }
-    /**
+    }    /**
      * プレイヤーの状態を更新する
      * @param {Array} platforms 足場オブジェクトの配列
-     */ update(platforms) {
+     * @param {boolean} jumpButtonPressed ジャンプボタンが押されているかどうか
+     */ update(platforms, jumpButtonPressed = false) {
         // 前のフレームの接地状態を保存
         const wasGrounded = this.grounded;
 
         // マリオスタイルの移動処理
-        // p5.playの新しいバージョンではkb.pressingを使用
-        this.movement(kb.pressing(' ') || window.mouseIsPressed);
+        // GameManagerから渡された入力状態を優先使用
+        this.movement(jumpButtonPressed);
 
         // スプライトの状態を更新（物理位置と同期）
         if (this.sprite) {
@@ -633,9 +633,7 @@ export class Player {
             const verticalDistance = Math.abs(platform.y - this.y);
             return verticalDistance < PLAYER_SIZE * 3;
         });
-    }
-
-    /**
+    }    /**
      * バックアップの衝突判定（p5.playの判定が失敗した場合に使用）
      * @param {Object} platform 足場オブジェクト
      * @param {boolean} isStartingPosition 初期位置かどうか
@@ -643,10 +641,12 @@ export class Player {
      */
     checkBackupCollision(platform, isStartingPosition) {
         const playerBottom = this.y + PLAYER_SIZE / 2;
+        const playerTop = this.y - PLAYER_SIZE / 2;
         const playerLeft = this.x - PLAYER_SIZE / 2;
         const playerRight = this.x + PLAYER_SIZE / 2;
 
         const platformTop = platform.y;
+        const platformBottom = platform.y + platform.height;
         const platformLeft = platform.x;
         const platformRight = platform.x + platform.width;
 
@@ -658,20 +658,24 @@ export class Player {
 
         // プレイヤーの垂直方向の状態を評価
         const isFalling = this.verticalSpeed >= 0;
+        
+        // 垂直方向の重なりもチェック（完全に足場の中にいる場合は衝突とみなさない）
+        const isOverlappingVertically = 
+            playerBottom > platformTop && playerTop < platformBottom;
+            
+        if (!isOverlappingVertically && !isStartingPosition) return false;
 
         // プレイヤーの足元から足場の表面までの距離
         const distanceToSurface = playerBottom - platformTop;
 
-        // 衝突判定の閾値を動的に設定（落下速度が速いほど大きい値）
-        const collisionThreshold = 15 + Math.abs(this.verticalSpeed) * 1.5;
-
-        // 落下中で足場の表面に近い場合、または初期位置の場合
-        if (
-            (isFalling &&
-                distanceToSurface >= 0 &&
+        // 衝突判定の閾値を動的に設定（落下速度が速いほど大きい値、最低10ピクセル）
+        const collisionThreshold = Math.max(10, 12 + Math.abs(this.verticalSpeed) * 2);        // 落下中で足場の表面に近い場合、または初期位置の場合
+        const isValidCollision = (isFalling &&
+                distanceToSurface >= -2 && // わずかに足場の上にいる場合も許容
                 distanceToSurface < collisionThreshold) ||
-            (isStartingPosition && Math.abs(distanceToSurface) < 20)
-        ) {
+            (isStartingPosition && Math.abs(distanceToSurface) < 20);
+            
+        if (isValidCollision) {
             if (window.collisionDebugMode) {
                 console.log(
                     `着地判定(バックアップ): 距離=${distanceToSurface.toFixed(

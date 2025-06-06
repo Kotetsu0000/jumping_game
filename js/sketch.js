@@ -494,6 +494,16 @@ window.mousePressed = function () {
 };
 
 /**
+ * マウスがクリックされた時の処理（クリックイベント用）
+ * mouseClickedイベントも処理することで入力の信頼性を向上
+ */
+window.mouseClicked = function () {
+    if (gameManager) {
+        gameManager.mousePressed();
+    }
+};
+
+/**
  * キーが離された時の処理
  */
 window.keyReleased = function () {
