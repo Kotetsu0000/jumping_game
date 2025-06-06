@@ -223,7 +223,8 @@ export class Player {
         }
 
         window.pop();
-    }    /**
+    }
+    /**
      * プレイヤーの状態を更新する
      * @param {Array} platforms 足場オブジェクトの配列
      * @param {boolean} jumpButtonPressed ジャンプボタンが押されているかどうか
@@ -633,7 +634,8 @@ export class Player {
             const verticalDistance = Math.abs(platform.y - this.y);
             return verticalDistance < PLAYER_SIZE * 3;
         });
-    }    /**
+    }
+    /**
      * バックアップの衝突判定（p5.playの判定が失敗した場合に使用）
      * @param {Object} platform 足場オブジェクト
      * @param {boolean} isStartingPosition 初期位置かどうか
@@ -658,23 +660,27 @@ export class Player {
 
         // プレイヤーの垂直方向の状態を評価
         const isFalling = this.verticalSpeed >= 0;
-        
+
         // 垂直方向の重なりもチェック（完全に足場の中にいる場合は衝突とみなさない）
-        const isOverlappingVertically = 
+        const isOverlappingVertically =
             playerBottom > platformTop && playerTop < platformBottom;
-            
+
         if (!isOverlappingVertically && !isStartingPosition) return false;
 
         // プレイヤーの足元から足場の表面までの距離
         const distanceToSurface = playerBottom - platformTop;
 
         // 衝突判定の閾値を動的に設定（落下速度が速いほど大きい値、最低10ピクセル）
-        const collisionThreshold = Math.max(10, 12 + Math.abs(this.verticalSpeed) * 2);        // 落下中で足場の表面に近い場合、または初期位置の場合
-        const isValidCollision = (isFalling &&
+        const collisionThreshold = Math.max(
+            10,
+            12 + Math.abs(this.verticalSpeed) * 2
+        ); // 落下中で足場の表面に近い場合、または初期位置の場合
+        const isValidCollision =
+            (isFalling &&
                 distanceToSurface >= -2 && // わずかに足場の上にいる場合も許容
                 distanceToSurface < collisionThreshold) ||
             (isStartingPosition && Math.abs(distanceToSurface) < 20);
-            
+
         if (isValidCollision) {
             if (window.collisionDebugMode) {
                 console.log(

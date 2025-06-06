@@ -62,25 +62,25 @@ export class GameManager {
      * ゲームの状態を更新する     */ update() {
         if (this.state === GAME_STATE.PLAYING) {
             this.stageGenerator.update(); // プレイヤー更新処理に足場の配列を渡す
-            
+
             // スペースキー押下状態をリアルタイムで検出（持続的ジャンプ効果のため）
             const spaceIsPressed = kb.pressing(' ') || window.mouseIsPressed;
-            
+
             // キーが押されたばかりの状態を検出（新たなジャンプ開始のため）
             if (spaceIsPressed && !this.spaceKeyPressed) {
                 console.log('入力検出：ジャンプ開始');
                 this.player.jump();
                 this.spaceKeyPressed = true;
-            } 
+            }
             // キーが離された状態を検出
             else if (!spaceIsPressed && this.spaceKeyPressed) {
                 console.log('入力解除');
                 this.spaceKeyPressed = false;
             }
-            
+
             // プレイヤー更新（入力状態も渡す）
             this.player.update(this.stageGenerator.platforms, spaceIsPressed);
-            
+
             // ゲームオーバー判定
             if (this.isGameOver()) {
                 this.state = GAME_STATE.GAME_OVER;
