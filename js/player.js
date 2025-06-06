@@ -293,15 +293,26 @@ export class Player {
      * @param {boolean} jumpBtnPress ジャンプボタンが押されているか
      */
     jumpCheck(jumpBtnPress) {
+        // ジャンプボタンの状態をデバッグ出力（フレーム数で制限）
+        if (window.frameCount % 60 === 0) {
+            console.log(
+                `ボタン状態: 現在=${jumpBtnPress}, 前回=${this.jumpBtnPrevPress}, grounded=${this.grounded}, state=${this.movementState}`
+            );
+        }
+
         // 前回押されていなくて、今回押された場合のみジャンプ処理を行う
         if (jumpBtnPress && !this.jumpBtnPrevPress && this.grounded) {
             // 接地状態でボタンが押されたらジャンプ開始
             if (this.movementState === 'OnGround') {
                 this.preparingJump();
-                if (window.debugMode) {
-                    console.log('ジャンプ開始！');
-                }
+                console.log('ジャンプ開始！');
+            } else {
+                console.log(
+                    `ジャンプ拒否: 地上にいるはずなのに状態が${this.movementState}`
+                );
             }
+        } else if (jumpBtnPress && !this.jumpBtnPrevPress && !this.grounded) {
+            console.log('ジャンプ拒否: 空中にいる');
         }
     }
 
@@ -366,15 +377,15 @@ export class Player {
         }
 
         // 物理演算
-        this.physics();
-
-        // 滞空時間が長すぎる場合の緊急落下処理
+        this.physics(); // 滞空時間が長すぎる場合の緊急落下処理
+        // 長時間滞空対策は更に緩和（より長く滞空できるようにする）
         const airTime = window.frameCount - this.jumpStartFrame;
-        if (airTime > 120) {
-            // 約2秒間滞空したら強制的に落下速度を上げる
-            this.verticalSpeed = Math.max(this.verticalSpeed, 2);
+        if (airTime > 150) {
+            // 120から150に増やして滞空時間を延長
+            // 約2.5秒間滞空したら緩やかに落下速度を上げる
+            this.verticalSpeed = Math.max(this.verticalSpeed, 1.5); // 2から1.5に減らして落下を緩やかに
             if (window.debugMode) {
-                console.log('長時間滞空状態を検知: 落下処理強化');
+                console.log('長時間滞空状態を検知: 落下処理適用（緩やかに）');
             }
         }
     }
@@ -456,6 +467,15 @@ export class Player {
         const playerLeft = this.x - PLAYER_SIZE / 2;
         const playerRight = this.x + PLAYER_SIZE / 2;
 
+        // デバッグ情報を定期的に出力（高頻度のログを避けるためフレーム数で制限）
+        if (window.frameCount % 60 === 0) {
+            console.log(
+                `プレイヤー状態: grounded=${this.grounded}, state=${
+                    this.movementState
+                }, y=${Math.floor(this.y)}`
+            );
+        }
+
         // 最も効率的な検出のため、プレイヤーの近くにある足場のみを処理
         // 画面内の足場のみを処理（パフォーマンス最適化）
         const nearbyPlatforms = platforms.filter((platform) => {
@@ -512,58 +532,65 @@ export class Player {
                     distanceToSurface < 15
                 ) {
                     isColliding = true;
-                }
-            }
-
-            // 衝突している場合、着地処理を行う
-            if (isColliding) {
-                // 上からの衝突の場合のみ着地と判定（横や下からぶつかった場合は無視）
-                // 判定を緩和して確実に着地するように
-                if (
-                    prevPlayerBottom <= platformTop + 10 ||
-                    isStartingPosition ||
-                    this.verticalSpeed >= 0
-                ) {
-                    // 足場の上に位置を補正
-                    this.y = platformTop - PLAYER_SIZE / 2;
-                    this.velocity = 0;
-                    this.grounded = true;
-                    isOnAnyPlatform = true;
-
-                    // マリオスタイルのジャンプ状態も更新
-                    this.movementState = 'OnGround';
-                    this.verticalSpeed = 0;
-                    this.verticalForceDecimalPart = 0;
-
-                    if (window.debugMode) {
+                    if (window.frameCount % 30 === 0) {
                         console.log(
-                            `足場に着地: x=${this.x}, y=${this.y}, platform: ${platformLeft}-${platformRight}`
+                            `着地判定: 距離=${distanceToSurface.toFixed(
+                                2
+                            )}, 落下中=${isFalling}, 初期位置=${isStartingPosition}`
                         );
                     }
-                    break; // 一度着地したら他の足場の判定は不要
                 }
-            }
 
-            // 初期配置時の特別処理（ゲーム開始時に確実に足場の上に立っているようにするため）
-            if (
-                isStartingPosition &&
-                isOverlappingHorizontally &&
-                !isOnAnyPlatform
-            ) {
-                if (Math.abs(playerBottom - platformTop) < 20) {
-                    this.y = platformTop - PLAYER_SIZE / 2;
-                    this.velocity = 0;
-                    this.grounded = true;
-                    isOnAnyPlatform = true;
+                // 衝突している場合、着地処理を行う
+                if (isColliding) {
+                    // 上からの衝突の場合のみ着地と判定（横や下からぶつかった場合は無視）
+                    // 判定を緩和して確実に着地するように
+                    if (
+                        prevPlayerBottom <= platformTop + 10 ||
+                        isStartingPosition ||
+                        this.verticalSpeed >= 0
+                    ) {
+                        // 足場の上に位置を補正
+                        this.y = platformTop - PLAYER_SIZE / 2;
+                        this.velocity = 0;
+                        this.grounded = true;
+                        isOnAnyPlatform = true;
 
-                    // マリオスタイルのジャンプ状態も更新
-                    this.movementState = 'OnGround';
-                    this.verticalSpeed = 0;
+                        // マリオスタイルのジャンプ状態も更新
+                        this.movementState = 'OnGround';
+                        this.verticalSpeed = 0;
+                        this.verticalForceDecimalPart = 0;
 
-                    if (window.debugMode) {
-                        console.log('初期位置で足場に着地');
+                        if (window.debugMode) {
+                            //console.log(
+                            //    `足場に着地: x=${this.x}, y=${this.y}, platform: ${platformLeft}-${platformRight}`
+                            //);
+                        }
+                        break; // 一度着地したら他の足場の判定は不要
                     }
-                    break;
+                }
+
+                // 初期配置時の特別処理（ゲーム開始時に確実に足場の上に立っているようにするため）
+                if (
+                    isStartingPosition &&
+                    isOverlappingHorizontally &&
+                    !isOnAnyPlatform
+                ) {
+                    if (Math.abs(playerBottom - platformTop) < 20) {
+                        this.y = platformTop - PLAYER_SIZE / 2;
+                        this.velocity = 0;
+                        this.grounded = true;
+                        isOnAnyPlatform = true;
+
+                        // マリオスタイルのジャンプ状態も更新
+                        this.movementState = 'OnGround';
+                        this.verticalSpeed = 0;
+
+                        if (window.debugMode) {
+                            console.log('初期位置で足場に着地');
+                        }
+                        break;
+                    }
                 }
             }
         }
@@ -602,12 +629,22 @@ export class Player {
      * 外部からのジャンプ要求に対応するメソッド
      */
     jump() {
+        // デバッグ情報を追加
+        console.log(
+            `ジャンプ要求: grounded=${this.grounded}, state=${this.movementState}`
+        );
+
         // 接地状態の場合のみジャンプを実行
         if (this.grounded && this.movementState === 'OnGround') {
             this.preparingJump();
             if (window.debugMode) {
                 console.log('外部からジャンプが要求されました！');
             }
+        } else {
+            // ジャンプできない理由をログに出力
+            console.log(
+                `ジャンプ拒否: grounded=${this.grounded}, state=${this.movementState}`
+            );
         }
     }
 

@@ -8,8 +8,10 @@ import { CANVAS_WIDTH, CANVAS_HEIGHT, COLOR_PALETTE } from './config.js';
 window.gameManager = null; // グローバル変数として公開
 let canvasCreated = false;
 
-// デバッグモード（初期設定、URLパラメータで制御可能）
-window.debugMode = window.debugMode || false;
+// デバッグモード（HTMLで明示的に設定されていない場合のみfalseにする）
+if (window.debugMode === undefined) {
+    window.debugMode = false;
+}
 
 // パフォーマンスモニタリング用の変数
 let frameRates = [];
@@ -50,6 +52,15 @@ function isP5PlayReady() {
  */
 window.setup = function () {
     console.log('セットアップを開始します...');
+
+    //現在のURLにdebug.htmlが含まれているか確認
+    if (window.location.href.includes('debug.html')) {
+        window.debugMode = true; // デバッグモードを有効にする
+        console.log('デバッグモードが有効になりました');
+    } else {
+        window.debugMode = false; // デバッグモードを無効にする
+        console.log('デバッグモードは無効です');
+    }
 
     // 多重初期化防止
     if (canvasCreated) {
@@ -236,9 +247,9 @@ window.draw = function () {
         // 1フレームの処理時間を記録（実際のフレーム時間ではなく、処理時間）
         const processingTime = performance.now() - startTime;
         if (window.debugMode) {
-            console.log(
-                `Frame processing time: ${processingTime.toFixed(2)}ms`
-            );
+            //console.log(
+            //    `Frame processing time: ${processingTime.toFixed(2)}ms`
+            //);
         }
     } catch (error) {
         console.error('ゲーム実行中にエラーが発生しました:', error);

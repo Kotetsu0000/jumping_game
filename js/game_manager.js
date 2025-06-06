@@ -184,6 +184,7 @@ export class GameManager {
             // p5.jsの標準キーボード検出を使用
             if (window.keyCode === 32 && !this.spaceKeyPressed) {
                 // 32はスペースキーのキーコード
+                console.log('スペースキー検出: ジャンプ要求');
                 this.spaceKeyPressed = true; // キー状態をマーク
                 this.player.jump();
             }
@@ -199,6 +200,7 @@ export class GameManager {
         if (this.state === GAME_STATE.START) {
             this.startGame();
         } else if (this.state === GAME_STATE.PLAYING) {
+            console.log('マウスクリック検出: ジャンプ要求');
             // 追加した専用のジャンプメソッドを呼び出す
             if (this.player && typeof this.player.jump === 'function') {
                 this.player.jump();
@@ -213,6 +215,7 @@ export class GameManager {
     keyReleased() {
         // スペースキーが離されたらフラグをリセット
         if (window.key === ' ' || window.keyCode === 32) {
+            console.log('スペースキー解放');
             this.spaceKeyPressed = false;
         }
     }

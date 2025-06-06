@@ -15,15 +15,15 @@ export const GRAVITY = 0.8; // 互換性のために残しておく（新しい�
 // マリオスタイルのジャンプパラメータ
 export const MARIO_JUMP_PARAMS = {
     // 初期ジャンプ速度 - 横速度に応じて選択される（より高く飛ぶために値を大きくする）
-    INITIAL_SPEEDS: [-6, -6, -6, -7, -7],
+    INITIAL_SPEEDS: [-11, -11, -11, -13, -13],
     // 上昇中の加速度係数（小さくすると上昇時間が長くなる）
-    VERTICAL_FORCE: [0x18, 0x18, 0x16, 0x20, 0x20],
+    VERTICAL_FORCE: [0x16, 0x16, 0x16, 0x20, 0x20],
     // 落下中の加速度係数（必ず落下するように十分大きな値に設定）
-    VERTICAL_FALL_FORCE: [0x90, 0x90, 0x80, 0xa0, 0xa0],
+    VERTICAL_FALL_FORCE: [0x80, 0x80, 0x70, 0x90, 0x90],
     // 初期加速度の小数部分
     INITIAL_FORCE_DECIMAL: [0x40, 0x40, 0x40, 0x40, 0x40],
     // 落下速度上限（必ず落下するように十分な値に設定）
-    DOWN_SPEED_LIMIT: 6,
+    DOWN_SPEED_LIMIT: 8,
 };
 
 // 横方向の移動速度しきい値（ジャンプパラメータ選択用）
@@ -33,9 +33,9 @@ export const INITIAL_PLAYER_X = 200;
 export const INITIAL_PLAYER_Y = 300;
 
 // プラットフォーム設定
-export const PLATFORM_SPEED = 4;
-export const PLATFORM_MIN_WIDTH = 100;
-export const PLATFORM_MAX_WIDTH = 150;
+export const PLATFORM_SPEED = 4.5; // スピードをやや落として余裕を持たせる
+export const PLATFORM_MIN_WIDTH = 100; // 最小幅を増やして着地しやすくする
+export const PLATFORM_MAX_WIDTH = 170; // 最大幅も増やして全体的に広く
 export const PLATFORM_HEIGHT = 20;
 export const PLATFORM_MIN_HEIGHT = 150;
 export const PLATFORM_MAX_HEIGHT = 450;
