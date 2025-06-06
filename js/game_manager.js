@@ -57,79 +57,131 @@ export class GameManager {
         this.player.setup();
         this.stageGenerator.setup();
     }
-
     /**
-     * ゲームの状態を更新する     */ update() {
+     * ゲームの状態を更新する
+     */
+    update() {
         if (this.state === GAME_STATE.PLAYING) {
-            this.stageGenerator.update(); // プレイヤー更新処理に足場の配列を渡す
+            // ステージジェネレーターを更新し、難易度情報を取得
+            const difficultyInfo = this.stageGenerator.update();
 
-            // スペースキー押下状態をリアルタイムで検出（持続的ジャンプ効果のため）
+            // 入力処理の最適化
+            // 複数の入力方法をサポート（キーボード、タッチ、マウス）
             const spaceIsPressed = kb.pressing(' ') || window.mouseIsPressed;
 
-            // キーが押されたばかりの状態を検出（新たなジャンプ開始のため）
-            if (spaceIsPressed && !this.spaceKeyPressed) {
-                console.log('入力検出：ジャンプ開始');
-                this.player.jump();
-                this.spaceKeyPressed = true;
-            }
-            // キーが離された状態を検出
-            else if (!spaceIsPressed && this.spaceKeyPressed) {
-                console.log('入力解除');
-                this.spaceKeyPressed = false;
+            // 前回の入力状態と比較して変化を検出
+            const inputStateChanged = spaceIsPressed !== this.spaceKeyPressed;
+
+            // 入力の状態変化に応じた処理
+            if (inputStateChanged) {
+                if (spaceIsPressed) {
+                    // ジャンプボタンが押された瞬間
+                    if (window.debugMode) {
+                        console.log('入力検出：ジャンプ開始');
+                    }
+                    this.player.jump();
+                } else {
+                    // ジャンプボタンが離された瞬間
+                    if (window.debugMode) {
+                        console.log('入力解除');
+                    }
+                }
+                // 入力状態を更新
+                this.spaceKeyPressed = spaceIsPressed;
             }
 
-            // プレイヤー更新（入力状態も渡す）
+            // プレイヤー更新（足場情報と入力状態を渡す）
             this.player.update(this.stageGenerator.platforms, spaceIsPressed);
 
-            // ゲームオーバー判定
+            // ゲームオーバー判定と処理
             if (this.isGameOver()) {
-                this.state = GAME_STATE.GAME_OVER;
-                console.log('ゲームオーバー: ' + this.player.y);
-
-                // ハイスコア更新チェック
-                this.isNewHighScore = false;
-                if (this.score > this.highScore) {
-                    this.isNewHighScore = true;
-                    this.highScore = this.score;
-                    this.saveHighScore(this.highScore);
-                    console.log('新しいハイスコア: ' + this.highScore);
-                }
+                this.handleGameOver();
             } else {
-                // 進行距離と難易度に基づいてスコアを更新
-                this.updateScore();
+                // 正常プレイ中：進行距離と難易度に基づいてスコアを更新
+                this.updateScore(difficultyInfo);
             }
         }
     }
 
     /**
-     * スコアを更新する
-     * 進行距離と難易度に基づいてスコアを計算
+     * ゲームオーバー時の処理
      */
-    updateScore() {
-        // 基本スコアは難易度係数に基づく
-        const difficultyBonus = Math.ceil(this.stageGenerator.difficultyFactor);
-
-        // 進行距離に基づいたボーナス（足場の速度に応じて進んだ距離として計算）
-        const distanceBonus = Math.floor(this.stageGenerator.gameTime / 60); // 1秒あたり1ポイント
-
-        // 実際の距離メートルを計算（表示用）
-        this.distanceMeters = Math.floor(
-            (this.stageGenerator.gameTime *
-                this.stageGenerator.difficultyFactor) /
-                12
+    handleGameOver() {
+        // ゲーム状態を更新
+        this.state = GAME_STATE.GAME_OVER;
+        console.log(
+            `ゲームオーバー: y=${Math.floor(this.player.y)}, スコア=${
+                this.score
+            }`
         );
 
-        // 合計スコアを更新
-        const addedScore = difficultyBonus;
-        this.score += addedScore;
+        // ハイスコア更新チェック
+        this.checkHighScore();
 
-        // 一定間隔でスコアデバッグ情報を表示
-        if (window.debugMode && this.stageGenerator.gameTime % 60 === 0) {
+        // ゲームオーバーサウンド（実装されていれば）
+        // this.playGameOverSound();
+    }
+
+    /**
+     * ハイスコア更新チェックと保存
+     */
+    checkHighScore() {
+        this.isNewHighScore = false;
+        if (this.score > this.highScore) {
+            this.isNewHighScore = true;
+            this.highScore = this.score;
+            this.saveHighScore(this.highScore);
+            console.log('新しいハイスコア達成: ' + this.highScore);
+        }
+    }
+    /**
+     * スコアを更新する
+     * 進行距離と難易度に基づいてスコアを計算
+     * @param {Object} difficultyInfo 難易度情報（オプション）
+     */
+    updateScore(difficultyInfo) {
+        // 難易度係数を取得（引数から取得するか、直接アクセスするか）
+        const difficulty =
+            difficultyInfo?.difficulty || this.stageGenerator.difficultyFactor;
+
+        // 基本スコアは難易度係数に基づく（より高い精度で計算）
+        const difficultyBonus = Math.ceil(difficulty * 1.5);
+
+        // 進行距離に基づいたボーナス（足場の速度に応じて進んだ距離として計算）
+        const gameTime = this.stageGenerator.gameTime;
+        const timeBonus = Math.floor(gameTime / 180); // 3秒ごとに1ポイント追加
+
+        // 継続ジャンプボーナス（連続ジャンプ回数に応じたボーナス）
+        // 実装予定の機能のためのプレースホルダ
+        const jumpBonus = 0; // 未実装
+
+        // 実際の距離メートルを計算（表示用）
+        // より現実的な距離計算：時間 * 速度 * スケール係数
+        const distanceScale = 0.05; // メートルへの変換係数
+        this.distanceMeters = Math.floor(gameTime * difficulty * distanceScale);
+
+        // 合計スコアを更新
+        const baseScore = difficultyBonus + timeBonus + jumpBonus;
+        this.score += baseScore;
+
+        // 10秒ごとにスコアデバッグ情報を表示（デバッグモード時）
+        if (window.debugMode && gameTime % 600 === 0) {
             console.log(
-                `スコア更新: ${this.score}, 距離: ${
-                    this.distanceMeters
-                }m, 難易度: ${this.stageGenerator.difficultyFactor.toFixed(2)}`
+                `スコア更新: ${this.score} (+${baseScore}), ` +
+                    `距離: ${this.distanceMeters}m, ` +
+                    `難易度: ${difficulty.toFixed(2)}x, ` +
+                    `時間: ${Math.floor(gameTime / 60)}秒`
             );
+        }
+
+        // ミニマイルストーン達成（100点ごと）
+        if (
+            Math.floor(this.score / 100) >
+            Math.floor((this.score - baseScore) / 100)
+        ) {
+            const milestone = Math.floor(this.score / 100) * 100;
+            console.log(`マイルストーン達成: ${milestone}点!`);
+            // ここに達成エフェクトなどを追加できます
         }
     }
     /**
@@ -137,19 +189,38 @@ export class GameManager {
      * @returns {boolean} ゲームオーバーの場合true
      */
     isGameOver() {
-        // p5.jsではCANVAS_HEIGHTで定義された画面高さを基準に判定
-        // 画面下限を超えた場合、ゲームオーバー
-        // GAME_OVER_MARGINはプレイヤーが完全に画面外に出たことを判定するために使用します
+        // 条件1: 画面下限を超えた場合
+        // GAME_OVER_MARGINはプレイヤーが完全に画面外に出たことを判定するために使用
         const isOffScreen = this.player.y > window.height + GAME_OVER_MARGIN;
 
-        // デバッグ出力
-        if (isOffScreen) {
+        // 条件2: 長時間浮遊状態（フォールバック安全装置、バグ対策）
+        const maxAirborneFrames = 300; // 5秒間
+        const isStuckInAir =
+            !this.player.grounded &&
+            this.player.movementState === 'Jumping' &&
+            window.frameCount - this.player.jumpStartFrame > maxAirborneFrames;
+
+        // 条件3: 無効な位置にいる場合（バグ対策）
+        const hasInvalidPosition =
+            isNaN(this.player.y) || this.player.y < -1000;
+
+        // どれか一つの条件でもtrueならゲームオーバー
+        const gameOver = isOffScreen || isStuckInAir || hasInvalidPosition;
+
+        // デバッグ出力 - 原因も表示
+        if (gameOver && window.debugMode) {
+            let reason = '';
+            if (isOffScreen) reason = '画面外落下';
+            else if (isStuckInAir) reason = '浮遊バグ';
+            else if (hasInvalidPosition) reason = '無効な位置';
             console.log(
-                `ゲームオーバー検出: プレイヤー位置y=${this.player.y}, 画面高さ: ${window.height}`
+                `ゲームオーバー検出: 理由=${reason}, ` +
+                    `プレイヤー位置y=${Math.floor(this.player.y)}, ` +
+                    `速度=${this.player.verticalSpeed.toFixed(1)}, ` +
+                    `画面高さ=${window.height}`
             );
         }
-
-        return isOffScreen;
+        return gameOver;
     }
 
     /**

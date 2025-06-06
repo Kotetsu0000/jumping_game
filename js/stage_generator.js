@@ -199,15 +199,31 @@ export class StageGenerator {
     }
     /**
      * 難易度を更新する
+     * @returns {Object} 難易度の状態情報
      */
     updateDifficulty() {
-        // 難易度上昇を緩やかに - 60秒（3600フレーム）ごとに難易度を0.1増加
-        this.difficultyFactor = 1.0 + (this.gameTime / 3600) * 0.15;
+        // 前回の難易度を記録
+        const prevDifficulty = this.difficultyFactor;
+
+        // 難易度上昇を緩やかに調整 - より滑らかなカーブを実現
+        // 開始から1分（3600フレーム）で1.15倍、3分で1.45倍
+        const timeFactor = Math.min(1.0, this.gameTime / 10800); // 3分で最大難易度に
+        const targetFactor = 1.0 + Math.min(0.45, timeFactor * 0.45); // 最大45%増加
+
+        // エラー排除のための安全範囲設定
+        if (isNaN(targetFactor)) {
+            console.error('難易度計算エラー:', this.gameTime);
+            this.difficultyFactor = 1.0;
+        } else {
+            this.difficultyFactor = targetFactor;
+        }
 
         // ゲーム序盤は難易度を下げる（開始から30秒間）
         if (this.gameTime < 1800) {
-            // 徐々に1.0まで上昇
-            this.difficultyFactor = Math.max(0.8, this.difficultyFactor); // 最低0.8から
+            // より滑らかに1.0へ向かって上昇
+            const startupProgress = this.gameTime / 1800;
+            const easeInFactor = startupProgress * startupProgress; // イーズイン効果
+            this.difficultyFactor = 0.8 + (targetFactor - 0.8) * easeInFactor;
         }
 
         // 最大難易度を1.6に制限（通常の1.6倍の速さに抑える）
@@ -217,6 +233,25 @@ export class StageGenerator {
         this.platforms.forEach((p) => {
             p.speed = p.baseSpeed * this.difficultyFactor;
         });
+
+        // 難易度に変更があった場合のみログ出力
+        if (
+            Math.abs(this.difficultyFactor - prevDifficulty) > 0.01 &&
+            window.debugMode
+        ) {
+            console.log(
+                `難易度上昇: ${this.difficultyFactor.toFixed(2)}x (${(
+                    this.gameTime / 60
+                ).toFixed(0)}秒経過)`
+            );
+        }
+
+        // 難易度情報を返す（GameManagerに伝えるため）
+        return {
+            difficulty: this.difficultyFactor,
+            gameTime: this.gameTime,
+            gameTimeSeconds: Math.floor(this.gameTime / 60),
+        };
     }
     /**
      * 新しいプラットフォームを生成する

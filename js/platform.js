@@ -108,83 +108,115 @@ export class Platform {
             // デバッグ表示の設定
             this.sprite.debug = window.collisionDebugMode || window.debugMode;
         }
-    }
-
-    /** プラットフォームを描画 */
+    } /** プラットフォームを描画 */
     draw() {
-        // 最適化：描画前に画面内かどうかを簡易チェック（余裕を持たせる）
-        // 足場の右端が画面左端より左にある、または足場の左端が画面右端より右にある場合はスキップ
-        if (this.x + this.width < -50 || this.x > window.width + 50) {
+        // 最適化：描画範囲のカリング（余裕を持たせつつも厳格に判定）
+        // 足場が完全に画面外なら描画をスキップ
+        if (this.x > window.width || this.x + this.width < 0) {
             return;
         }
 
         // 縦方向も同様に画面外なら描画しない（上下にも余裕を持たせる）
-        if (this.y + this.height < -50 || this.y > window.height + 50) {
+        if (this.y > window.height || this.y + this.height < 0) {
             return;
         }
 
+        // 画面内の足場のみ描画
         window.push(); // 描画スタイルを保存
 
         // 描画モードをCENTERに設定（スプライト座標系と合わせる）
         window.rectMode(window.CENTER);
         window.noStroke(); // 輪郭線なし
 
-        // 実際の衝突判定と同じ座標に描画するため、中心座標を使用
+        // 中心座標を計算（一度だけ計算して再利用）
         const centerX = this.x + this.width / 2;
         const centerY = this.y + this.height / 2;
 
-        switch (this.type) {
+        // メモリキャッシュを活用するため、ローカル変数を使用
+        const platformType = this.type;
+        const platformWidth = this.width;
+        const platformHeight = this.height;
+        const platformX = this.x;
+        const platformY = this.y;
+
+        // 足場タイプに応じた描画処理
+        switch (platformType) {
             case PLATFORM_TYPE_BASIC: // 基本的な足場
                 window.fill(COLOR_PALETTE.PLATFORM);
-                window.rect(centerX, centerY, this.width, this.height);
+                window.rect(centerX, centerY, platformWidth, platformHeight);
                 break;
 
             case PLATFORM_TYPE_GRASSY: // 草地の足場
                 // 土台部分
                 window.fill(COLOR_PALETTE.PLATFORM);
-                window.rect(centerX, centerY, this.width, this.height);
+                window.rect(centerX, centerY, platformWidth, platformHeight);
 
-                // 草の部分（上部の装飾）
+                // 草の部分（上部の装飾）- 事前計算による最適化
                 window.fill(COLOR_PALETTE.PLATFORM_GRASS);
                 const grassHeight = 5;
 
-                // 一時的に描画モードをコーナーモードに変更して草を描画
+                // グラフィック範囲を画面内に制限し、処理を効率化
+                const startX = Math.max(0, platformX);
+                const endX = Math.min(platformX + platformWidth, window.width);
+
+                // 草の描画を最適化（毎回random()を呼び出す代わりに事前パターンを使用）
                 window.rectMode(window.CORNER);
-                for (let i = 0; i < this.width; i += GRASS_PIXEL_SIZE) {
-                    if (window.random() > 0.5) {
-                        // 草の密度
+                for (let i = 0; i < platformWidth; i += GRASS_PIXEL_SIZE) {
+                    // 決定論的な草パターン（シード値ベース）
+                    const grassSeed = (platformX + i) % 10; // 位置に基づく擬似ランダム
+                    if (grassSeed > 5) {
+                        // 50%の確率で草を描画
                         window.rect(
-                            this.x + i,
-                            this.y - grassHeight, // 足場の上端より少し上に配置
+                            platformX + i,
+                            platformY - grassHeight,
                             GRASS_PIXEL_SIZE,
                             grassHeight
                         );
                     }
                 }
-                // 描画モードを戻す
                 window.rectMode(window.CENTER);
                 break;
 
             case PLATFORM_TYPE_STONE: // 石の足場
                 window.fill(COLOR_PALETTE.PLATFORM_STONE);
-                window.rect(centerX, centerY, this.width, this.height);
+                window.rect(centerX, centerY, platformWidth, platformHeight);
 
-                // 石のテクスチャ（ディテール）
+                // 石のテクスチャ（ディテール）- 描画の最適化
                 window.fill(COLOR_PALETTE.PLATFORM_STONE_DETAIL);
                 const detailSize = STONE_DETAIL_SIZE;
+
+                // ディテール数を画面内の見える部分だけに制限して最適化
+                const detailDensity = 0.15; // ディテールの密度係数
+                const visibleWidth = Math.min(
+                    platformWidth,
+                    window.width - platformX
+                );
+                const visibleArea = visibleWidth * platformHeight;
                 const numDetails = Math.floor(
-                    ((this.width * this.height) / (detailSize * detailSize)) *
-                        0.15
+                    (visibleArea / (detailSize * detailSize)) * detailDensity
                 );
 
-                // 一時的に描画モードをコーナーモードに変更してディテールを描画
+                // 描画領域を限定
                 window.rectMode(window.CORNER);
+
+                // 決定論的なディテール配置（毎回同じ足場は同じパターンになるように）
+                const detailSeed = Math.floor(platformX / 100); // 位置に基づく擬似乱数シード
                 for (let i = 0; i < numDetails; i++) {
-                    const detailX = this.x + window.random(this.width);
-                    const detailY = this.y + window.random(this.height);
-                    window.rect(detailX, detailY, detailSize, detailSize);
+                    // 決定論的な疑似乱数生成（Math.sinを使用）
+                    const randomX =
+                        Math.abs(Math.sin(detailSeed * 0.1 + i * 0.3)) *
+                        platformWidth;
+                    const randomY =
+                        Math.abs(Math.sin(detailSeed * 0.2 + i * 0.7)) *
+                        platformHeight;
+
+                    window.rect(
+                        platformX + randomX,
+                        platformY + randomY,
+                        detailSize,
+                        detailSize
+                    );
                 }
-                // 描画モードを戻す
                 window.rectMode(window.CENTER);
                 break;
         }
@@ -194,7 +226,7 @@ export class Platform {
             window.noFill();
             window.stroke(0, 255, 0, 200); // 目立つ緑色
             window.strokeWeight(2);
-            window.rect(centerX, centerY, this.width, this.height);
+            window.rect(centerX, centerY, platformWidth, platformHeight);
 
             // デバッグ情報を表示
             window.fill(255);
@@ -220,14 +252,17 @@ export class Platform {
     /**
      * 画面外判定
      * @returns {boolean} 足場が画面外に出た場合はtrue
-     */
-    isOffScreen() {
+     */ isOffScreen() {
         // 足場全体が画面外に出たらtrue
-        const result = this.x + this.width < 0;
+        const result = this.x + this.width < -20; // 余裕を持って画面外判定
 
-        // 画面外に出たらスプライトも削除
+        // 画面外に出たらスプライトも削除（メモリ解放）
         if (result && this.sprite) {
-            this.sprite.remove();
+            try {
+                this.sprite.remove();
+            } catch (e) {
+                console.error('スプライト削除エラー:', e);
+            }
         }
 
         return result;
