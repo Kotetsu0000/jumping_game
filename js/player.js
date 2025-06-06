@@ -302,16 +302,23 @@ export class Player {
      */
     jumpCheck(jumpBtnPress) {
         // ジャンプボタンの状態をデバッグ出力（フレーム数で制限）
-        if (window.frameCount % 60 === 0) {
+        if (window.frameCount % 60 === 0 && window.debugMode) {
             console.log(
                 `ボタン状態: 現在=${jumpBtnPress}, 前回=${this.jumpBtnPrevPress}, grounded=${this.grounded}, state=${this.movementState}, 長押しフレーム=${this.jumpButtonHoldFrames}`
             );
         }
 
-        // ボタンが押されている状態を更新
+        // ボタン状態の更新処理を改良
+        // 地上では押されているフレーム数をカウント
         if (jumpBtnPress && this.grounded) {
             this.jumpButtonHoldFrames++;
-        } else if (!jumpBtnPress) {
+        }
+        // 空中でも押されているフレーム数をカウント（長押し効果のため）
+        else if (jumpBtnPress && !this.grounded) {
+            this.jumpButtonHoldFrames++;
+        }
+        // ボタンが離されたらカウントリセット
+        else if (!jumpBtnPress) {
             this.jumpButtonHoldFrames = 0;
         }
 
@@ -320,17 +327,22 @@ export class Player {
             // 接地状態でボタンが押されたらジャンプ開始
             if (this.movementState === 'OnGround') {
                 this.preparingJump();
-                console.log('ジャンプ開始！');
-            } else {
+                if (window.debugMode) {
+                    console.log('ジャンプ開始！');
+                }
+            } else if (window.debugMode) {
                 console.log(
                     `ジャンプ拒否: 地上にいるはずなのに状態が${this.movementState}`
                 );
             }
-        } else if (jumpBtnPress && !this.jumpBtnPrevPress && !this.grounded) {
+        } else if (
+            jumpBtnPress &&
+            !this.jumpBtnPrevPress &&
+            !this.grounded &&
+            window.debugMode
+        ) {
             console.log('ジャンプ拒否: 空中にいる');
-        }
-
-        // 長押し効果の適用（ジャンプ中かつボタンが押されている場合）
+        } // 長押し効果の適用（ジャンプ中かつボタンが押されている場合）
         if (this.movementState === 'Jumping' && jumpBtnPress) {
             const framesSinceJump = window.frameCount - this.jumpStartFrame;
             // 効果フレーム数内であれば上昇力を増加させる
@@ -341,13 +353,27 @@ export class Player {
                     this.verticalForce = Math.max(
                         this.verticalForce -
                             MARIO_JUMP_PARAMS.HOLD_JUMP_POWER_FACTOR,
-                        MARIO_JUMP_PARAMS.VERTICAL_FORCE[4] * 0.8 // 最低値の設定
+                        MARIO_JUMP_PARAMS.VERTICAL_FORCE[4] * 0.7 // 最低値をさらに小さく設定（より強力な長押し効果）
                     );
 
-                    // デバッグ情報（50フレームごとに表示）
+                    // 長押しの効果をより顕著にするため、上昇速度に直接ブースト値を追加
+                    // フレーム数が少ないほど大きなブーストを与える（初期の押し込みが重要）
+                    const boostFactor =
+                        1 -
+                        framesSinceJump / MARIO_JUMP_PARAMS.HOLD_JUMP_FRAMES;
+                    const speedBoost = -0.05 * boostFactor; // 負の値が上昇方向
+                    this.verticalSpeed += speedBoost;
+
+                    // デバッグ情報（5フレームごとに表示）
                     if (framesSinceJump % 5 === 0) {
                         console.log(
-                            `長押し効果適用中: 上昇力=${this.verticalForce}, フレーム=${framesSinceJump}`
+                            `長押し効果適用中: 上昇力=${
+                                this.verticalForce
+                            }, 速度=${this.verticalSpeed.toFixed(
+                                2
+                            )}, ブースト=${speedBoost.toFixed(
+                                3
+                            )}, フレーム=${framesSinceJump}`
                         );
                     }
                 }
@@ -366,27 +392,14 @@ export class Player {
         this.grounded = false; // 即座に接地状態を解除
 
         // ボタン長押し時間に基づいてジャンプ強度を選択
-        // 長押しフレーム数が多いほど強力なジャンプインデックスを選択
-        let idx = 0; // デフォルトは小ジャンプ
+        // マリオスタイルのジャンプでは、ボタンを押した瞬間のジャンプは必ず同じ初速で開始
+        // 長押しの効果は jumpCheck で継続して適用される
+        let idx = 0; // 基本的な初期ジャンプは一定の強さ
 
-        if (this.jumpButtonHoldFrames >= 15) {
-            idx = 4; // 最大ジャンプ
-        } else if (this.jumpButtonHoldFrames >= 10) {
-            idx = 3; // 大ジャンプ
-        } else if (this.jumpButtonHoldFrames >= 5) {
-            idx = 2; // 中ジャンプ
-        } else if (this.jumpButtonHoldFrames >= 2) {
-            idx = 1; // 小～中ジャンプ
+        // 過去のボタン長押し履歴から初速を若干調整（少しだけ先読み効果）
+        if (this.jumpButtonHoldFrames >= 3) {
+            idx = 1; // 少し強めの初速（先読み効果）
         }
-
-        // 横速度も考慮（オプション - 現在はコメントアウト）
-        /*
-        HORIZONTAL_SPEED_THRESHOLDS.forEach((threshold, i) => {
-            if (this.horizontalSpeed >= threshold) {
-                idx = Math.min(idx + 1, 4); // インデックスは0-4の範囲に制限
-            }
-        });
-        */
 
         // ジャンプパラメータを設定
         this.verticalForce = MARIO_JUMP_PARAMS.VERTICAL_FORCE[idx];
@@ -394,6 +407,10 @@ export class Player {
         this.verticalForceDecimalPart =
             MARIO_JUMP_PARAMS.INITIAL_FORCE_DECIMAL[idx];
         this.verticalSpeed = MARIO_JUMP_PARAMS.INITIAL_SPEEDS[idx];
+
+        // 瞬時的な上昇効果を加えて、最初の一瞬のレスポンスを良くする
+        // これによりボタンを押した瞬間の反応が良くなる
+        this.y -= 2; // わずかに上昇させて反応をよくする
 
         console.log(
             `ジャンプ開始: 長押しフレーム=${this.jumpButtonHoldFrames}, インデックス=${idx}, 初速=${this.verticalSpeed}, 上昇力=${this.verticalForce}`
@@ -407,16 +424,22 @@ export class Player {
     moveProcess(jumpBtnPress) {
         if (this.movementState === 'OnGround') {
             return; // 接地状態なら何もしない
-        }
-
-        // 速度がプラスなら画面下へ進んでいるものとして落下状態の加速度に切り替える
+        } // 速度がプラスなら画面下へ進んでいるものとして落下状態の加速度に切り替える
         if (this.verticalSpeed >= 0) {
             this.verticalForce = this.verticalForceFall;
         } else {
             // ボタンが離された＆上昇中？
             if (!jumpBtnPress && this.jumpBtnPrevPress) {
-                // 落下時の加速度値に切り替える（すぐに落下開始するように）
+                // ボタンを離した瞬間に上昇速度を大幅に減少させる（小ジャンプを実現）
+                this.verticalSpeed *= 0.4; // 上昇速度を40%に削減
+                // さらに落下時の加速度値に切り替える（すぐに落下開始するように）
                 this.verticalForce = this.verticalForceFall;
+
+                if (window.debugMode) {
+                    console.log(
+                        `ボタン離し検出: 速度を落とします. 速度=${this.verticalSpeed}`
+                    );
+                }
             }
 
             // ジャンプ力が弱まっていくように
@@ -440,7 +463,6 @@ export class Player {
             }
         }
     }
-
     /**
      * マリオスタイルの物理演算
      */
@@ -465,6 +487,25 @@ export class Player {
         if (this.verticalForceDecimalPart >= 256) {
             this.verticalForceDecimalPart -= 256;
             this.verticalSpeed++;
+        }
+
+        // 上昇時と落下時で異なる挙動を適用（マリオらしい挙動のため）
+        if (this.verticalSpeed < 0) {
+            // 上昇中は徐々に減速（上昇速度が徐々に落ちる）
+            // 上昇の最高点付近で滞空感を出すための微調整
+            if (this.verticalSpeed > -1.0 && this.verticalSpeed < 0) {
+                // 上昇の頂点付近では減速を緩やかに
+                this.verticalForce *= 0.98;
+            }
+        } else {
+            // 落下開始直後は緩やかに、その後急速に加速（マリオらしい挙動）
+            if (this.verticalSpeed < 2.0) {
+                // 落下開始直後は加速をやや抑えめに
+                this.verticalForce *= 0.95;
+            } else {
+                // ある程度落下したら通常の加速度に戻す
+                this.verticalForce = this.verticalForceFall;
+            }
         }
 
         // 落下速度制限チェック - 必ず適用されるようにする
