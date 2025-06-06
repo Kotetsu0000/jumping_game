@@ -199,6 +199,9 @@ function initializeGame() {
         console.log('デバッグモードでゲームを初期化しました');
         console.log('Player:', window.gameManager.player);
     }
+
+    // 衝突判定デバッグモード(デフォルトはオフ)
+    window.collisionDebugMode = false;
 }
 
 /**
@@ -435,6 +438,21 @@ window.keyPressed = function () {
                 showPerformanceStats ? '表示' : '非表示'
             }`
         );
+        return;
+    }
+
+    // シークレットモード: 衝突判定の詳細分析モード (Cキー)
+    if (kb.presses('c') || kb.presses('C')) {
+        window.collisionDebugMode = !window.collisionDebugMode;
+        console.log(
+            `衝突判定分析モード: ${window.collisionDebugMode ? 'オン' : 'オフ'}`
+        );
+
+        // 衝突判定モードがオンの場合は自動的にデバッグモードも有効化
+        if (window.collisionDebugMode && !window.debugMode) {
+            window.debugMode = true;
+            console.log('デバッグモードも自動的に有効化されました');
+        }
         return;
     }
 

@@ -82,19 +82,30 @@ export class Platform {
         }
     } /** プラットフォームの移動を更新 */
     update() {
-        this.x -= this.speed; // スプライトの位置も更新
+        this.x -= this.speed; // プラットフォームを左に移動
+
+        // スプライトが存在する場合は位置を同期
         if (this.sprite) {
-            // 中心座標を計算
+            // 中心座標を計算（p5.playのスプライトは中心座標系）
             const centerX = this.x + this.width / 2;
             const centerY = this.y + this.height / 2;
 
             // スプライトの位置を更新
             this.sprite.x = centerX;
-            this.sprite.y = centerY; // スプライトのサイズを再設定（衝突判定のため）
+            this.sprite.y = centerY;
+
+            // スプライトのサイズを再設定（衝突判定のため）
             this.sprite.width = this.width;
             this.sprite.height = this.height;
-            this.sprite.static = true; // 毎フレーム静的なスプライト設定を確保（immovableは非推奨）
-            this.sprite.collider = 'static'; // 衝突判定タイプも再確認
+
+            // 物理的な性質を設定
+            this.sprite.static = true; // 静的なスプライト（動かない物体）として設定
+            this.sprite.collider = 'static'; // 静的な衝突判定として設定
+
+            // 追加の物理特性を設定（必要に応じて）
+            if (typeof this.sprite.friction === 'number') {
+                this.sprite.friction = 0; // 摩擦なし
+            }
 
             // デバッグ表示の設定
             this.sprite.debug = window.debugMode; // デバッグモードに応じて表示を切り替え

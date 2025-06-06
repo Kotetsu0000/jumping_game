@@ -224,7 +224,6 @@ export class Player {
 
         window.pop();
     }
-
     /**
      * プレイヤーの状態を更新する
      * @param {Array} platforms 足場オブジェクトの配列
@@ -236,14 +235,23 @@ export class Player {
         // p5.playの新しいバージョンではkb.pressingを使用
         this.movement(kb.pressing(' ') || window.mouseIsPressed);
 
-        // 衝突判定の前にスプライトの位置を更新（物理位置と同期）
+        // スプライトの状態を更新（物理位置と同期）
         if (this.sprite) {
+            // 位置を同期
             this.sprite.x = this.x;
             this.sprite.y = this.y;
 
             // 当たり判定用のspriteサイズを更新
             this.sprite.width = PLAYER_SIZE;
             this.sprite.height = PLAYER_SIZE;
+
+            // 速度情報も同期（p5.playの物理エンジン連携のため）
+            if (this.sprite.vel) {
+                // y方向の速度を同期
+                this.sprite.vel.y = this.verticalSpeed;
+                // x方向は実際には動かないが、見かけ上は移動しているように
+                this.sprite.vel.x = 0;
+            }
 
             // デバッグモードの場合、衝突判定の可視化を有効にする
             this.sprite.debug = window.debugMode ? true : false;
@@ -510,27 +518,42 @@ export class Player {
         const playerRight = this.x + PLAYER_SIZE / 2;
 
         // デバッグ情報を定期的に出力（高頻度のログを避けるためフレーム数で制限）
-        if (window.frameCount % 60 === 0) {
+        if (window.debugMode && window.frameCount % 60 === 0) {
             console.log(
                 `プレイヤー状態: grounded=${this.grounded}, state=${
                     this.movementState
-                }, y=${Math.floor(this.y)}`
+                }, y=${Math.floor(this.y)}, vSpeed=${this.verticalSpeed.toFixed(
+                    2
+                )}`
             );
         }
 
         // 最も効率的な検出のため、プレイヤーの近くにある足場のみを処理
-        // 画面内の足場のみを処理（パフォーマンス最適化）
+        // スクロール方向を考慮して左側の足場は除外し、右側の足場に対してより広い範囲を確保
         const nearbyPlatforms = platforms.filter((platform) => {
-            // 画面外+少し余白の足場は無視（パフォーマンス最適化）
-            if (
-                platform.x + platform.width < -50 ||
-                platform.x > window.width + 50
-            ) {
+            // プレイヤーの後ろ（左側）の足場は無視（-100pxの余裕を持たせる）
+            if (platform.x + platform.width < playerLeft - 100) {
                 return false;
             }
-            // プレイヤーから縦方向に遠すぎる足場は無視（距離を広げて確実に足場を検出）
+
+            // プレイヤーの前方（右側）は広めに取る（+200pxの余裕）
+            if (platform.x > playerRight + 200) {
+                return false;
+            }
+
+            // 縦方向も効率化（プレイヤーの上下3倍の距離まで）
             const verticalDistance = Math.abs(platform.y - this.y);
-            return verticalDistance < PLAYER_SIZE * 5;
+            return verticalDistance < PLAYER_SIZE * 3;
+        });
+
+        // 衝突判定の優先度を設定: 落下中の足場の方が優先
+        nearbyPlatforms.sort((a, b) => {
+            // 落下中は上からの衝突を優先するため、上にある足場を優先
+            if (this.verticalSpeed > 0) {
+                return a.y - b.y; // Y座標が小さい（上にある）足場を優先
+            }
+            // 上昇中は関係ないのでデフォルト順序
+            return 0;
         });
 
         // 近くの足場に対して衝突判定を実行
@@ -548,91 +571,100 @@ export class Player {
 
             // 衝突判定フラグ
             let isColliding = false;
+            let useBackupCollision = false;
 
+            // p5.playのネイティブ衝突判定を試みる
             try {
-                // 最初にp5.playのネイティブ衝突判定を使用
                 if (
                     this.sprite &&
                     platform.sprite &&
                     typeof this.sprite.collide === 'function'
                 ) {
+                    // スプライトの位置が同期していることを確認
+                    this.sprite.x = this.x;
+                    this.sprite.y = this.y;
+                    platform.sprite.x = platformLeft + platform.width / 2;
+                    platform.sprite.y = platformTop + platform.height / 2;
+
+                    // ネイティブ衝突判定を使用
                     isColliding = this.sprite.collide(platform.sprite);
+                } else {
+                    useBackupCollision = true;
                 }
             } catch (e) {
                 console.error('p5.play衝突判定中にエラーが発生しました:', e);
+                useBackupCollision = true;
             }
 
-            // p5.playの衝突判定が失敗した場合や結果が不正確な場合、手動での衝突判定を実行
-            if (!isColliding && isOverlappingHorizontally) {
-                // 着地判定の条件を単純化
+            // バックアップ衝突判定（p5.playの判定が失敗した場合）
+            if (
+                (useBackupCollision || !isColliding) &&
+                isOverlappingHorizontally
+            ) {
+                // プレイヤーの垂直方向の状態を評価
                 const isFalling = this.verticalSpeed >= 0;
-                const distanceToSurface = Math.abs(playerBottom - platformTop);
 
-                // 落下中で足場の表面に近い場合 (判定距離を増やして確実に検出)
+                // プレイヤーの足元から足場の表面までの距離
+                const distanceToSurface = playerBottom - platformTop;
+
+                // 衝突判定の閾値を動的に設定（落下速度が速いほど大きい値）
+                const collisionThreshold =
+                    15 + Math.abs(this.verticalSpeed) * 1.5;
+
+                // 落下中で足場の表面に近い場合、または初期位置の場合
                 if (
-                    (isFalling || isStartingPosition) &&
-                    distanceToSurface < 15
+                    (isFalling &&
+                        distanceToSurface >= 0 &&
+                        distanceToSurface < collisionThreshold) ||
+                    (isStartingPosition && Math.abs(distanceToSurface) < 20)
                 ) {
                     isColliding = true;
-                    if (window.frameCount % 30 === 0) {
+
+                    if (window.debugMode && window.frameCount % 30 === 0) {
                         console.log(
-                            `着地判定: 距離=${distanceToSurface.toFixed(
+                            `着地判定(バックアップ): 距離=${distanceToSurface.toFixed(
                                 2
-                            )}, 落下中=${isFalling}, 初期位置=${isStartingPosition}`
+                            )}, ` +
+                                `落下中=${isFalling}, 速度=${this.verticalSpeed.toFixed(
+                                    2
+                                )}, ` +
+                                `閾値=${collisionThreshold.toFixed(2)}`
                         );
                     }
                 }
+            }
 
-                // 衝突している場合、着地処理を行う
-                if (isColliding) {
-                    // 上からの衝突の場合のみ着地と判定（横や下からぶつかった場合は無視）
-                    // 判定を緩和して確実に着地するように
-                    if (
-                        prevPlayerBottom <= platformTop + 10 ||
-                        isStartingPosition ||
-                        this.verticalSpeed >= 0
-                    ) {
-                        // 足場の上に位置を補正
-                        this.y = platformTop - PLAYER_SIZE / 2;
-                        this.velocity = 0;
-                        this.grounded = true;
-                        isOnAnyPlatform = true;
-
-                        // マリオスタイルのジャンプ状態も更新
-                        this.movementState = 'OnGround';
-                        this.verticalSpeed = 0;
-                        this.verticalForceDecimalPart = 0;
-
-                        if (window.debugMode) {
-                            //console.log(
-                            //    `足場に着地: x=${this.x}, y=${this.y}, platform: ${platformLeft}-${platformRight}`
-                            //);
-                        }
-                        break; // 一度着地したら他の足場の判定は不要
-                    }
-                }
-
-                // 初期配置時の特別処理（ゲーム開始時に確実に足場の上に立っているようにするため）
+            // 衝突している場合、着地処理を行う
+            if (isColliding) {
+                // 上からの衝突の場合のみ着地と判定（横や下からぶつかった場合は無視）
+                // 判定条件:
+                // 1. 前フレームでプレイヤーの足元が足場の上にあった、または
+                // 2. 初期位置の場合、または
+                // 3. 下向きに移動中（落下中）の場合
                 if (
-                    isStartingPosition &&
-                    isOverlappingHorizontally &&
-                    !isOnAnyPlatform
+                    prevPlayerBottom <= platformTop + 10 ||
+                    isStartingPosition ||
+                    this.verticalSpeed >= 0
                 ) {
-                    if (Math.abs(playerBottom - platformTop) < 20) {
-                        this.y = platformTop - PLAYER_SIZE / 2;
-                        this.velocity = 0;
-                        this.grounded = true;
-                        isOnAnyPlatform = true;
+                    // 足場の上に位置を補正
+                    this.y = platformTop - PLAYER_SIZE / 2;
+                    this.velocity = 0;
+                    this.grounded = true;
+                    isOnAnyPlatform = true;
 
-                        // マリオスタイルのジャンプ状態も更新
-                        this.movementState = 'OnGround';
-                        this.verticalSpeed = 0;
+                    // マリオスタイルのジャンプ状態も更新
+                    this.movementState = 'OnGround';
+                    this.verticalSpeed = 0;
+                    this.verticalForceDecimalPart = 0;
 
-                        if (window.debugMode) {
-                            console.log('初期位置で足場に着地');
-                        }
-                        break;
+                    if (window.debugMode) {
+                        console.log(
+                            `足場に着地: platform.id=${
+                                platform._id
+                            }, x=${Math.floor(this.x)}, y=${Math.floor(this.y)}`
+                        );
                     }
+                    break; // 一度着地したら他の足場の判定は不要
                 }
             }
         }
@@ -649,11 +681,11 @@ export class Player {
             }
 
             if (window.debugMode) {
-                console.log('足場から離れた');
+                console.log('足場から離れた - 落下開始');
             }
         }
 
-        // 浮遊状態チェック - 長時間同じ場所にいるなら強制的に落下させる
+        // 浮遊状態の修正 - 空中で速度が極めて小さい場合は強制的に落下させる
         if (
             this.grounded === false &&
             Math.abs(this.verticalSpeed) < 0.1 &&
@@ -662,7 +694,7 @@ export class Player {
             this.verticalSpeed = 1;
             this.velocity = 1;
             if (window.debugMode) {
-                console.log('浮遊状態検知: 落下処理');
+                console.log('浮遊状態を検知: 強制的に落下処理を適用');
             }
         }
     }
