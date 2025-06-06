@@ -112,6 +112,17 @@ export class Platform {
 
     /** プラットフォームを描画 */
     draw() {
+        // 最適化：描画前に画面内かどうかを簡易チェック（余裕を持たせる）
+        // 足場の右端が画面左端より左にある、または足場の左端が画面右端より右にある場合はスキップ
+        if (this.x + this.width < -50 || this.x > window.width + 50) {
+            return;
+        }
+
+        // 縦方向も同様に画面外なら描画しない（上下にも余裕を持たせる）
+        if (this.y + this.height < -50 || this.y > window.height + 50) {
+            return;
+        }
+
         window.push(); // 描画スタイルを保存
 
         // 描画モードをCENTERに設定（スプライト座標系と合わせる）
@@ -176,7 +187,9 @@ export class Platform {
                 // 描画モードを戻す
                 window.rectMode(window.CENTER);
                 break;
-        } // デバッグモードが有効なら詳細な衝突判定枠を表示
+        }
+
+        // デバッグモードが有効なら詳細な衝突判定枠を表示
         if (window.debugMode) {
             window.noFill();
             window.stroke(0, 255, 0, 200); // 目立つ緑色

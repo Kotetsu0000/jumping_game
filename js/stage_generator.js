@@ -151,26 +151,48 @@ export class StageGenerator {
      * プラットフォームの生成と更新を行う
      */
     update() {
+        // ゲーム時間を更新（フレーム数をカウント）
         this.gameTime++;
 
-        // 難易度を時間経過で調整
-        this.updateDifficulty();
-
-        // 一定間隔でプラットフォームを生成
-        if (this.gameTime % this.nextSpawnInterval === 0) {
+        // 新しい足場の生成を管理
+        this.nextSpawnInterval--;
+        if (this.nextSpawnInterval <= 0) {
             const platform = this.generateNewPlatform();
-            platform.setup(); // スプライトを初期化
+            platform.setup();
             this.platforms.push(platform);
 
-            // 次の生成間隔を設定（難易度に応じて変化）
-            this.nextSpawnInterval = Math.floor(
-                PLATFORM_SPAWN_INTERVAL / this.difficultyFactor
+            // 難易度に応じて次の生成間隔を設定
+            // 難易度が上がると、より短い間隔で生成される
+            const baseInterval = PLATFORM_SPAWN_INTERVAL;
+            const difficultyFactor = Math.min(
+                1.0,
+                (this.difficultyFactor - 1.0) * 2
             );
-            this.nextSpawnInterval = Math.max(this.nextSpawnInterval, 30); // 最小値を設定
+            this.nextSpawnInterval = Math.max(
+                40,
+                Math.floor(baseInterval * (1.0 - difficultyFactor * 0.3))
+            );
         }
 
-        // 各プラットフォームの更新
-        this.platforms.forEach((p) => p.update());
+        // 難易度を更新
+        this.updateDifficulty();
+
+        // プラットフォームの最適化された更新
+        // 画面に近い足場のみ更新処理を行う
+        const margin = window.width * 0.5; // 画面幅の半分の余裕を持たせる
+        for (let i = 0; i < this.platforms.length; i++) {
+            const platform = this.platforms[i];
+
+            // 画面の範囲から大きく離れた足場は更新を省略
+            if (platform.x > window.width + margin) {
+                // 画面から遠く離れた足場は概算で位置を更新（精密な更新は不要）
+                platform.x -= platform.speed;
+                continue;
+            }
+
+            // 画面内または近い足場は通常通り更新
+            platform.update();
+        }
 
         // 画面外のプラットフォームを削除
         this.cleanupPlatforms();
@@ -401,8 +423,29 @@ export class StageGenerator {
      * 画面外のプラットフォームを削除する
      */
     cleanupPlatforms() {
-        // 画面外に出た足場を削除
-        this.platforms = this.platforms.filter((p) => !p.isOffScreen());
+        // 最適化：画面外の足場を一括削除（先頭から連続する画面外プラットフォームのみ）
+        // これにより、配列の再構築コストを削減し、パフォーマンスを向上させる
+        if (this.platforms.length === 0) return;
+
+        // 最初のインデックスから連続して画面外になっているプラットフォームを数える
+        let offScreenCount = 0;
+        for (let i = 0; i < this.platforms.length; i++) {
+            if (this.platforms[i].isOffScreen()) {
+                offScreenCount++;
+            } else {
+                break; // 画面内のプラットフォームが見つかったら終了
+            }
+        }
+
+        // 画面外のプラットフォームがあれば削除（spliceを使用して一度に削除）
+        if (offScreenCount > 0) {
+            if (window.debugMode && offScreenCount > 1) {
+                console.log(
+                    `${offScreenCount}個の画面外プラットフォームを一括削除`
+                );
+            }
+            this.platforms.splice(0, offScreenCount);
+        }
     }
     /**
      * すべてのプラットフォームを描画する

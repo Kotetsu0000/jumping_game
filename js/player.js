@@ -616,24 +616,61 @@ export class Player {
      * @returns {Array} プレイヤーの近くにある足場の配列
      */
     getNearbyPlatforms(platforms) {
+        // プラットフォームがない場合は空配列を返す（エラー防止）
+        if (!platforms || platforms.length === 0) return [];
+
+        // プレイヤーの位置情報
         const playerLeft = this.x - PLAYER_SIZE / 2;
         const playerRight = this.x + PLAYER_SIZE / 2;
+        const playerTop = this.y - PLAYER_SIZE / 2;
+        const playerBottom = this.y + PLAYER_SIZE / 2;
 
-        return platforms.filter((platform) => {
-            // プレイヤーの後ろ（左側）の足場は無視（-100pxの余裕を持たせる）
-            if (platform.x + platform.width < playerLeft - 100) {
-                return false;
+        // 垂直方向の検出範囲（プレイヤーの状態に応じて動的に調整）
+        let verticalRange = PLAYER_SIZE * 4; // デフォルトの検出範囲
+
+        // 落下速度が速い場合は検出範囲を広げる（見逃し防止）
+        if (this.verticalSpeed > 2) {
+            verticalRange += this.verticalSpeed * 10;
+        }
+
+        // 水平方向の検出範囲も速度に基づいて調整
+        const horizontalBackRange = 100; // 後方の検出範囲
+        const horizontalForwardRange = 200 + this.horizontalSpeed * 10; // 前方の検出範囲（横スクロール速度の影響を考慮）
+
+        // 最適化：platforms配列を直接参照する代わりに、新しい配列を作成
+        const nearbyPlatforms = [];
+
+        for (let i = 0; i < platforms.length; i++) {
+            const platform = platforms[i];
+
+            // プレイヤーの後方（左側）にある足場は無視
+            if (
+                platform.x + platform.width <
+                playerLeft - horizontalBackRange
+            ) {
+                continue;
             }
 
-            // プレイヤーの前方（右側）は広めに取る（+200pxの余裕）
-            if (platform.x > playerRight + 200) {
-                return false;
+            // プレイヤーの前方（右側）にある足場も距離に応じて無視
+            if (platform.x > playerRight + horizontalForwardRange) {
+                continue;
             }
 
-            // 縦方向も効率化（プレイヤーの上下3倍の距離まで）
+            // 垂直方向のフィルタリング
             const verticalDistance = Math.abs(platform.y - this.y);
-            return verticalDistance < PLAYER_SIZE * 3;
-        });
+            if (verticalDistance < verticalRange) {
+                nearbyPlatforms.push(platform);
+            }
+        }
+
+        // デバッグ情報
+        if (window.debugMode && window.frameCount % 180 === 0) {
+            console.log(
+                `総プラットフォーム数: ${platforms.length}, 検出範囲内: ${nearbyPlatforms.length}`
+            );
+        }
+
+        return nearbyPlatforms;
     }
     /**
      * バックアップの衝突判定（p5.playの判定が失敗した場合に使用）
