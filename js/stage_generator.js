@@ -198,6 +198,38 @@ export class StageGenerator {
         this.cleanupPlatforms();
     }
     /**
+     * 外部からの難易度設定を受け取るメソッド
+     * @param {number} difficultyValue - 0.0～1.0の難易度値
+     */
+    setDifficulty(difficultyValue) {
+        // 有効範囲内の値に制限
+        const validDifficulty = Math.max(0.0, Math.min(1.0, difficultyValue));
+        // 前回の難易度から緩やかに変化させる（急激な難易度変化を防止）
+        this.difficultyFactor =
+            this.difficultyFactor * 0.95 + validDifficulty * 0.05;
+
+        // プラットフォームのスピードを難易度に応じて調整
+        const baseSpeed = PLATFORM_SPEED;
+        const maxSpeedIncrease = 1.5; // 最大で1.5倍まで速くなる
+        const currentSpeedFactor =
+            1.0 + this.difficultyFactor * maxSpeedIncrease;
+
+        // すべてのプラットフォームの速度を更新
+        for (let i = 0; i < this.platforms.length; i++) {
+            const platform = this.platforms[i];
+            platform.speed = baseSpeed * currentSpeedFactor;
+        }
+
+        if (window.debugMode) {
+            console.log(
+                `難易度更新: ${this.difficultyFactor.toFixed(
+                    2
+                )}, 速度係数: ${currentSpeedFactor.toFixed(2)}`
+            );
+        }
+    }
+
+    /**
      * 難易度を更新する
      */
     updateDifficulty() {

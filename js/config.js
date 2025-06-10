@@ -50,7 +50,7 @@ export const PLATFORM_MIN_WIDTH = 100; // 最小幅を増やして着地しや�
 export const PLATFORM_MAX_WIDTH = 170; // 最大幅も増やして全体的に広く
 export const PLATFORM_HEIGHT = 20;
 export const PLATFORM_MIN_HEIGHT = 150;
-export const PLATFORM_MAX_HEIGHT = 450;
+export const PLATFORM_MAX_HEIGHT = 400;
 // フレーム数単位でのプラットフォーム生成間隔
 export const PLATFORM_SPAWN_INTERVAL = 70;
 

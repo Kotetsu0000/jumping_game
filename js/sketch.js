@@ -209,61 +209,38 @@ function initializeGame() {
  * フレームごとに呼び出され、ゲームの状態を更新し描画します
  */
 window.draw = function () {
-    // パフォーマンス測定開始
-    const startTime = performance.now();
-
-    // 背景描画
-    window.background(COLOR_PALETTE.BACKGROUND);
-
-    // GameManagerが初期化されていない場合
-    if (!gameManager) {
-        // ライブラリのロード状況に応じたメッセージ
-        if (!isP5PlayReady()) {
-            window.fill(255);
-            window.textSize(16);
-            window.textAlign(window.CENTER, window.CENTER);
-            window.text(
-                'ライブラリ読み込み中...',
-                CANVAS_WIDTH / 2,
-                CANVAS_HEIGHT / 2
-            );
-
-            // 読み込みが完了していれば初期化を試みる
-            if (window.libraryStatus && window.libraryStatus.p5playReady) {
-                tryInitGame();
-            }
-        }
+    // ゲーム管理オブジェクトが存在しない場合は何もしない
+    if (!window.gameManager) {
         return;
     }
 
-    try {
-        // ゲーム状態更新と描画
-        gameManager.update();
-        gameManager.draw();
+    // 背景を描画
+    window.background(COLOR_PALETTE.BACKGROUND); // フレームレート情報を記録
+    updatePerformanceMetrics();
 
-        // パフォーマンス測定処理
-        updatePerformanceMetrics();
-        if (showPerformanceStats || window.debugMode) {
-            displayPerformanceStats();
-        }
+    // ビューポートカリングを行って最適化した描画
+    drawWithOptimization();
 
-        // 1フレームの処理時間を記録（実際のフレーム時間ではなく、処理時間）
-        const processingTime = performance.now() - startTime;
-        if (window.debugMode) {
-            //console.log(
-            //    `Frame processing time: ${processingTime.toFixed(2)}ms`
-            //);
-        }
-    } catch (error) {
-        console.error('ゲーム実行中にエラーが発生しました:', error);
-        window.fill(255, 0, 0);
-        window.textSize(14);
-        window.text(
-            'エラー: ' + error.message,
-            CANVAS_WIDTH / 2,
-            CANVAS_HEIGHT - 30
-        );
+    // パフォーマンス統計表示
+    if (showPerformanceStats) {
+        displayPerformanceStats();
     }
+
+    // フレーム時間の記録（1フレームの処理にかかる時間、ms）
+    const now = performance.now();
+    if (lastFrameTime > 0) {
+        const frameTime = now - lastFrameTime;
+
+        // 極端な値を除外（例：タブが非アクティブだった場合など）
+        if (frameTime > 0 && frameTime < 1000) {
+            // 1秒以上の遅延は無視
+            frameTimeHistory.push(frameTime);
+            if (frameTimeHistory.length > MAX_FRAME_HISTORY) {
+                frameTimeHistory.shift();
+            }
+        }
+    }
+    lastFrameTime = now;
 };
 
 /**
@@ -511,3 +488,133 @@ window.keyReleased = function () {
         gameManager.keyReleased();
     }
 };
+
+/**
+ * デバッグ情報を描画する
+ * デバッグモードが有効なときに呼び出される
+ */
+function drawDebugInfo() {
+    const padding = 10;
+    const lineHeight = 15;
+    const width = 220;
+    const height = 130;
+    const x = padding;
+    const y = padding;
+
+    // 背景を描画
+    window.push();
+    window.fill(0, 0, 0, 180); // 半透明の黒
+    window.stroke(255, 255, 0, 100); // 薄い黄色の枠線
+    window.strokeWeight(1);
+    window.rect(x, y, width, height, 5); // 角を少し丸くする
+
+    // テキスト設定
+    window.fill(255);
+    window.textSize(12);
+    window.textAlign(window.LEFT, window.TOP);
+    window.noStroke();
+
+    // タイトル
+    window.fill(255, 255, 0); // 黄色でタイトル表示
+    window.text(`デバッグ情報`, x + 5, y + 5);
+    window.fill(255);
+
+    // プレイヤー情報
+    const player = window.gameManager.player;
+    window.text(
+        `プレイヤー X: ${Math.floor(player.x)}`,
+        x + 5,
+        y + 5 + lineHeight
+    );
+    window.text(
+        `プレイヤー Y: ${Math.floor(player.y)}`,
+        x + 5,
+        y + 5 + lineHeight * 2
+    );
+    window.text(
+        `速度 X: ${player.velocityX.toFixed(2)}`,
+        x + 5,
+        y + 5 + lineHeight * 3
+    );
+    window.text(
+        `速度 Y: ${player.velocityY.toFixed(2)}`,
+        x + 5,
+        y + 5 + lineHeight * 4
+    );
+    window.text(
+        `ジャンプ状態: ${player.isJumping ? 'ジャンプ中' : '通常'}`,
+        x + 5,
+        y + 5 + lineHeight * 5
+    );
+
+    // ステージ情報
+    const platforms = window.gameManager.stageGenerator.platforms;
+    window.text(`足場数: ${platforms.length}`, x + 5, y + 5 + lineHeight * 6);
+    window.text(
+        `難易度: ${window.gameManager.stageGenerator.difficultyFactor.toFixed(
+            2
+        )}`,
+        x + 5,
+        y + 5 + lineHeight * 7
+    );
+
+    // ゲーム状態
+    window.text(
+        `スコア: ${window.gameManager.score}`,
+        x + 5,
+        y + 5 + lineHeight * 8
+    );
+
+    window.pop();
+}
+
+/**
+ * 最適化された描画処理
+ * ビューポートカリングを行い、画面に表示される要素のみ描画します
+ */
+function drawWithOptimization() {
+    // ゲーム状態の更新
+    window.gameManager.update();
+
+    // ビューポート範囲（画面内＋少し余裕を持たせる）
+    const viewport = {
+        left: -50,
+        right: CANVAS_WIDTH + 50,
+        top: -50,
+        bottom: CANVAS_HEIGHT + 50,
+    };
+
+    // プラットフォームのビューポートカリング（画面内のみ描画）
+    const platforms = window.gameManager.stageGenerator.platforms;
+
+    // プラットフォームを一度にバッチ処理（描画API呼び出し回数削減）
+    window.push();
+    for (let i = 0; i < platforms.length; i++) {
+        const platform = platforms[i];
+
+        // ビューポート外のプラットフォームはスキップ
+        if (
+            platform.x > viewport.right ||
+            platform.x + platform.width < viewport.left ||
+            platform.y > viewport.bottom ||
+            platform.y + platform.height < viewport.top
+        ) {
+            continue;
+        }
+
+        // 画面内のプラットフォームのみ描画
+        platform.draw();
+    }
+    window.pop();
+
+    // プレイヤーは常に画面内なので通常通り描画
+    window.gameManager.player.draw();
+
+    // UI要素の描画
+    window.gameManager.drawUI();
+
+    // デバッグ情報の描画（デバッグモードがONの場合のみ）
+    if (window.debugMode) {
+        drawDebugInfo();
+    }
+}

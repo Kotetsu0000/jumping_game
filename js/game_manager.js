@@ -14,6 +14,7 @@ import {
     FONT_SIZE_SCORE,
     GAME_OVER_MARGIN,
     PLAYER_SIZE,
+    PLATFORM_SPEED,
 } from './config.js';
 
 // ローカルストレージキー
@@ -57,11 +58,37 @@ export class GameManager {
         this.player.setup();
         this.stageGenerator.setup();
     }
-
     /**
-     * ゲームの状態を更新する     */ update() {
+     * ゲームの状態を更新する
+     */ update() {
         if (this.state === GAME_STATE.PLAYING) {
-            this.stageGenerator.update(); // プレイヤー更新処理に足場の配列を渡す
+            // ゲームの進行度に基づく難易度調整をステージジェネレータに伝達
+            const progressFactor = Math.min(1.0, this.score / 10000);
+            const timeBasedDifficulty = Math.min(1.0, window.frameCount / 3600); // 60秒で最大難易度
+            const currentDifficulty = Math.max(
+                progressFactor,
+                timeBasedDifficulty
+            );
+
+            // ステージジェネレータに難易度情報を設定
+            // StageGeneratorクラスのdifficultyFactorを直接更新
+            this.stageGenerator.difficultyFactor =
+                this.stageGenerator.difficultyFactor * 0.95 +
+                currentDifficulty * 0.05;
+
+            // プラットフォームの速度を難易度に応じて調整
+            const baseSpeed = PLATFORM_SPEED;
+            const maxSpeedIncrease = 1.5; // 最大で1.5倍まで速くなる
+            const currentSpeedFactor =
+                1.0 + this.stageGenerator.difficultyFactor * maxSpeedIncrease;
+
+            // すべてのプラットフォームの速度を更新
+            for (let i = 0; i < this.stageGenerator.platforms.length; i++) {
+                const platform = this.stageGenerator.platforms[i];
+                platform.speed = baseSpeed * currentSpeedFactor;
+            }
+
+            this.stageGenerator.update();
 
             // スペースキー押下状態をリアルタイムで検出（持続的ジャンプ効果のため）
             const spaceIsPressed = kb.pressing(' ') || window.mouseIsPressed;
