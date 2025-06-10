@@ -88,10 +88,9 @@ export class GameManager {
                 platform.speed = baseSpeed * currentSpeedFactor;
             }
 
-            this.stageGenerator.update();
-
-            // スペースキー押下状態をリアルタイムで検出（持続的ジャンプ効果のため）
-            const spaceIsPressed = kb.pressing(' ') || window.mouseIsPressed;
+            this.stageGenerator.update(); // スペースキー押下状態をリアルタイムで検出（持続的ジャンプ効果のため）
+            const spaceIsPressed =
+                window.keyIsDown(32) || window.mouseIsPressed; // 32はスペースキーのキーコード
 
             // キーが押されたばかりの状態を検出（新たなジャンプ開始のため）
             if (spaceIsPressed && !this.spaceKeyPressed) {

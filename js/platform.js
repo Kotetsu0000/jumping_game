@@ -33,7 +33,8 @@ export class Platform {
         this._id =
             Date.now().toString().slice(-5) + Math.floor(Math.random() * 100);
     }
-    /** 初期化処理（必要に応じて） */ setup() {
+    /** 初期化処理（必要に応じて） */
+    setup() {
         try {
             // p5.play v3.xでのスプライト作成
             const centerX = this.x + this.width / 2;
@@ -94,12 +95,7 @@ export class Platform {
             this.sprite.x = centerX;
             this.sprite.y = centerY;
             this.sprite.width = this.width;
-            this.sprite.height = this.height;
-
-            // 物理的な性質を設定
-            this.sprite.static = true;
-            this.sprite.collider = 'static'; // 静的な衝突判定として設定
-
+            this.sprite.height = this.height; // デバッグ表示の設定のみ更新（物理的な性質はsetup時に設定済み）
             // 摩擦値を設定（存在する場合のみ）
             if (typeof this.sprite.friction !== 'undefined') {
                 this.sprite.friction = 0; // 摩擦なし

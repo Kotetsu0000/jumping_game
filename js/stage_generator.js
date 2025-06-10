@@ -99,7 +99,9 @@ export class StageGenerator {
             platform.setup();
             this.platforms.push(platform); // 最初の数個の足場は確実に到達できるように非常に近めに配置
             // 足場の数に応じて徐々に間隔を広げていく
-            const isFirstPlatforms = this.platforms.length < 8; // より多くの足場を「初期足場」として扱う
+            const INITIAL_PLATFORM_COUNT = 8; // より多くの足場を「初期足場」として扱う
+            const isFirstPlatforms =
+                this.platforms.length < INITIAL_PLATFORM_COUNT;
             const horizontalGap = isFirstPlatforms
                 ? window.random(40, 70) // 最初の数個は非常に近く配置（さらに近く）
                 : window.random(60, 90); // それ以降は通常の間隔（こちらも近くする）
@@ -273,10 +275,10 @@ export class StageGenerator {
         // 水平方向の距離を計算（難易度と経過時間に応じて調整）
         // ゲーム開始直後は足場を近くに生成し、徐々に難しくする
         const gameProgressFactor = Math.min(1.0, this.gameTime / 3000); // 基本の間隔（ゲーム進行で徐々に開いていく）
-        const baseGap = 40 + gameProgressFactor * 20; // 60から40に減らして間隔を狭く
-
-        // 難易度による間隔調整（難しいほど広くなる）
-        const diffGap = (this.difficultyFactor - 1) * 10; // 15から10に減らして増加幅を小さく        // 最終的な間隔の範囲を計算
+        const baseGap = 40 + gameProgressFactor * 20; // 60から40に減らして間隔を狭く        // 難易度による間隔調整（難しいほど広くなる）
+        // 15から10に減らして増加幅を小さく
+        const diffGap = (this.difficultyFactor - 1) * 10;
+        // 最終的な間隔の範囲を計算
         const minGap = baseGap - 5; // 最小間隔をさらに縮小
         const maxGap = baseGap + diffGap + 10; // 最大間隔も縮小
 

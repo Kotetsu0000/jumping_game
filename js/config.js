@@ -45,7 +45,7 @@ export const INITIAL_PLAYER_X = 200;
 export const INITIAL_PLAYER_Y = 300;
 
 // プラットフォーム設定
-export const PLATFORM_SPEED = 4.5; // スピードをやや落として余裕を持たせる
+export const PLATFORM_SPEED = 4.5; // スピードをやや上げて難易度調整
 export const PLATFORM_MIN_WIDTH = 100; // 最小幅を増やして着地しやすくする
 export const PLATFORM_MAX_WIDTH = 170; // 最大幅も増やして全体的に広く
 export const PLATFORM_HEIGHT = 20;
