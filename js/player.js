@@ -128,6 +128,13 @@ export class Player {
     }
 
     /**
+     * プレイヤーを描画する
+     */
+    draw() {
+        this.drawPixelCharacter();
+    }
+
+    /**
      * ドット絵風キャラクターを描画する
      */
     drawPixelCharacter() {
