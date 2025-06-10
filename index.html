@@ -6,15 +6,86 @@
         <title>ジャンピングゲーム</title>
         <!-- 基本スタイルシート -->
         <link rel="stylesheet" href="css/style.css" />
-        <script src="js/p5.min.js"></script>
+
+        <!-- グローバルデバッグフラグの設定 -->
+        <script>
+            // デバッグフラグ
+            window.debugMode = false;
+
+            // p5.jsとplanck.jsの初期化状態を監視するグローバル変数
+            window.libraryStatus = {
+                p5Ready: false,
+                planckReady: false,
+                p5playReady: false,
+            };
+
+            // エラー表示関数
+            window.showLibraryError = function (message) {
+                console.error(message);
+                document.body.innerHTML =
+                    '<div style="text-align:center; margin-top:100px; font-family:sans-serif;">' +
+                    '<h1>ライブラリ読み込みエラー</h1>' +
+                    '<p>' +
+                    message +
+                    '</p>' +
+                    '<button onclick="location.reload()">再読み込み</button>' +
+                    '</div>';
+            };
+        </script>
+        <!-- p5.jsコアライブラリを最初に読み込み -->
+        <script src="js/p5.min.js?v=4"></script>
+
         <!-- planck.js - p5.playの依存ライブラリ -->
-        <script src="js/planck.min.js"></script>
+        <script src="js/planck.min.js?v=4"></script>
+
+        <!-- ライブラリが正しく読み込まれたか確認 -->
+        <script>
+            // planck.jsの存在確認
+            if (typeof planck === 'object') {
+                window.planck = planck;
+                console.log('planck.jsを正しく読み込みました');
+                window.libraryStatus.planckReady = true;
+            } else {
+                window.showLibraryError('planck.jsの読み込みに失敗しました');
+            }
+
+            // p5.jsの存在確認
+            if (typeof p5 === 'function') {
+                console.log('p5.jsを正しく読み込みました');
+                window.libraryStatus.p5Ready = true;
+            } else {
+                window.showLibraryError('p5.jsの読み込みに失敗しました');
+            }
+        </script>
         <!-- p5.play ライブラリ -->
-        <script src="js/p5.play.js"></script>
-        <!-- グローバル変数をエクスポートするヘルパースクリプト -->
-        <script src="js/p5_globals.js"></script>
-        <!-- メインスケッチファイル（モジュールとして読み込み） -->
-        <script type="module" src="js/sketch.js"></script>
+        <script src="js/p5.play.js?v=4"></script>
+
+        <!-- p5.playの準備 -->
+        <script>
+            // グローバルへの参照設定
+            window.p5Ready = function (p5Instance) {
+                if (!p5Instance) return;
+
+                console.log('p5プレイインスタンスを設定中...');
+
+                // クラス参照を設定
+                window.Sprite = p5Instance.Sprite;
+                window.World = p5Instance.World;
+                window.Group = p5Instance.Group;
+                window.allSprites = p5Instance.allSprites;
+                window.world = p5Instance.world;
+
+                window.libraryStatus.p5playReady = true;
+                console.log('p5.play準備完了');
+            };
+
+            // 既にインスタンスが存在する場合
+            if (window._p5play_init) {
+                window.p5Ready(window);
+            }
+        </script>
+        <!-- メインスケッチファイルをモジュールとして読み込み -->
+        <script type="module" src="js/sketch.js?v=4"></script>
     </head>
     <body></body>
 </html>

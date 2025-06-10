@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>ジャンプゲーム - デバッグモード</title>
+        <style>
+            body {
+                margin: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background-color: #333;
+                overflow: hidden;
+            }
+            canvas {
+                border: 2px solid white;
+            }
+            #debug-panel {
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                background-color: rgba(0, 0, 0, 0.7);
+                color: white;
+                padding: 10px;
+                border-radius: 5px;
+                font-family: monospace;
+                z-index: 100;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="debug-panel">
+            <h3>デバッグパネル</h3>
+            <div id="player-info">プレイヤー情報をロード中...</div>
+        </div>
+
+        <script>
+            // デバッグモードを有効にする
+            window.debugMode = true;
+            console.log('デバッグモード: 有効');
+        </script>
+
+        <!-- p5.js と p5.playライブラリを読み込み -->
+        <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/planck@latest/dist/planck.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/p5.play@3/p5.play.js"></script>
+
+        <!-- メインのゲームスクリプトを読み込み -->
+        <script type="module" src="js/sketch.js"></script>
+
+        <script>
+            // デバッグパネルを定期的に更新
+            setInterval(() => {
+                const playerInfoDiv = document.getElementById('player-info');
+                if (window.gameManager && window.gameManager.player) {
+                    const player = window.gameManager.player;
+                    playerInfoDiv.innerHTML = `
+                    <p>位置: X: ${Math.floor(player.x)}, Y: ${Math.floor(
+                        player.y
+                    )}</p>
+                    <p>速度: ${player.verticalSpeed.toFixed(
+                        2
+                    )} (velocity: ${player.velocity.toFixed(2)})</p>
+                    <p>接地: ${player.grounded ? 'はい' : 'いいえ'}</p>
+                    <p>状態: ${player.movementState}</p>
+                    <p>ジャンプ中: ${player.isJumping ? 'はい' : 'いいえ'}</p>
+                    <p>スコア: ${window.gameManager.score}</p>
+                `;
+                }
+            }, 100);
+        </script>
+    </body>
+</html>

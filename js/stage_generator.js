@@ -17,7 +17,7 @@ import {
     PLATFORM_SPEED,
 } from './config.js';
 
-// p5.js関数は window.p5Globals 経由で直接アクセス
+// p5.js関数は window 経由で直接アクセス
 
 export class StageGenerator {
     constructor() {
@@ -52,34 +52,38 @@ export class StageGenerator {
     generateInitialPlatforms() {
         // 画面内に最初の足場を複数配置
         // プレイヤーの初期位置に合わせた最初の足場
-        const initialWidth = 200; // 初期足場は広めに
+        const initialWidth = 400; // 初期足場をより広く設定（右側に長く伸ばす）
 
         // 重要：プレイヤーの足元に確実に足場を配置
         // プレイヤーのサイズも考慮して正確に計算
         const initialY = INITIAL_PLAYER_Y + PLAYER_SIZE / 2;
 
-        // プレイヤーが足場の中央に立つように位置を調整
+        // プレイヤーが足場の左側に立つように位置を調整
+        // 左側にはプレイヤーサイズの2倍、右側により長く伸ばす
         const initialPlatform = new Platform(
-            INITIAL_PLAYER_X - initialWidth / 2,
+            INITIAL_PLAYER_X - PLAYER_SIZE * 2,
             initialY,
             initialWidth
         );
         initialPlatform.setup();
         this.platforms.push(initialPlatform);
 
+        // 最初の足場の位置を保存（次の足場生成の参照点として使用）
+        this.lastPlatformX = INITIAL_PLAYER_X - PLAYER_SIZE * 2;
+        this.lastPlatformWidth = initialWidth;
+
         if (window.debugMode) {
             console.log(
                 `初期足場を配置: x=${
-                    INITIAL_PLAYER_X - initialWidth / 2
+                    INITIAL_PLAYER_X - PLAYER_SIZE * 2
                 }, y=${initialY}, width=${initialWidth}`
             );
             console.log(
                 `プレイヤー初期位置: x=${INITIAL_PLAYER_X}, y=${INITIAL_PLAYER_Y}`
             );
-        }
-
-        // 残りの足場を配置
-        let currentX = INITIAL_PLAYER_X + initialWidth / 2 + 50; // 最初の足場の右端から適度な距離を空ける
+        } // 残りの足場を配置
+        // 初期足場の右端から開始
+        let currentX = INITIAL_PLAYER_X - PLAYER_SIZE * 2 + initialWidth + 30; // 初期足場の右端から短い距離で開始
         let currentY = initialY; // 最初は同じ高さからスタート
 
         // ジャンプの最大高さを計算
@@ -93,29 +97,35 @@ export class StageGenerator {
             // プラットフォームを生成
             const platform = new Platform(currentX, currentY, width);
             platform.setup();
-            this.platforms.push(platform);
-
-            // 次の足場の水平距離を決定（初期足場は確実に到達できるように近めに配置）
-            const horizontalGap = window.random(70, 100);
+            this.platforms.push(platform); // 最初の数個の足場は確実に到達できるように非常に近めに配置
+            // 足場の数に応じて徐々に間隔を広げていく
+            const INITIAL_PLATFORM_COUNT = 8; // より多くの足場を「初期足場」として扱う
+            const isFirstPlatforms =
+                this.platforms.length < INITIAL_PLATFORM_COUNT;
+            const horizontalGap = isFirstPlatforms
+                ? window.random(40, 70) // 最初の数個は非常に近く配置（さらに近く）
+                : window.random(60, 90); // それ以降は通常の間隔（こちらも近くする）
             currentX += width + horizontalGap; // 次の足場のY座標を計算（初期配置では非常に簡単に）
             // 初期足場は非常に到達しやすく配置
             let heightDiff;
 
             // 足場数に応じてパターンを少しずつ変化
             const platformNumber = this.platforms.length;
-
-            if (platformNumber <= 3) {
-                // 最初の数個は完全に水平に近い配置（非常に簡単）
+            if (platformNumber <= 5) {
+                // 最初の数個は完全に水平に近い配置（非常に簡単）- より多くの足場を完全平坦に
+                heightDiff = window.random(-3, 3);
+            } else if (platformNumber <= 10) {
+                // 次の数個は若干の起伏だけ（まだかなり簡単）
                 heightDiff = window.random(-5, 5);
             } else if (platformNumber % 3 === 0) {
-                // 少し上り坂（少し上に）
-                heightDiff = window.random(-15, -5);
+                // 少し上り坂（少し上に）- 上りの勾配を緩やかに
+                heightDiff = window.random(-10, -2);
             } else if (platformNumber % 3 === 1) {
-                // 平坦に
-                heightDiff = window.random(-8, 8);
+                // 平坦に - より平坦に
+                heightDiff = window.random(-6, 6);
             } else {
-                // 少し下り坂（少し下に）
-                heightDiff = window.random(5, 15);
+                // 少し下り坂（少し下に）- 下りの勾配も緩やかに
+                heightDiff = window.random(2, 10);
             }
 
             // 画面内に収める
@@ -143,40 +153,99 @@ export class StageGenerator {
      * プラットフォームの生成と更新を行う
      */
     update() {
+        // ゲーム時間を更新（フレーム数をカウント）
         this.gameTime++;
 
-        // 難易度を時間経過で調整
-        this.updateDifficulty();
-
-        // 一定間隔でプラットフォームを生成
-        if (this.gameTime % this.nextSpawnInterval === 0) {
+        // 新しい足場の生成を管理
+        this.nextSpawnInterval--;
+        if (this.nextSpawnInterval <= 0) {
             const platform = this.generateNewPlatform();
-            platform.setup(); // スプライトを初期化
+            platform.setup();
             this.platforms.push(platform);
 
-            // 次の生成間隔を設定（難易度に応じて変化）
-            this.nextSpawnInterval = Math.floor(
-                PLATFORM_SPAWN_INTERVAL / this.difficultyFactor
+            // 難易度に応じて次の生成間隔を設定
+            // 難易度が上がると、より短い間隔で生成される
+            const baseInterval = PLATFORM_SPAWN_INTERVAL;
+            const difficultyFactor = Math.min(
+                1.0,
+                (this.difficultyFactor - 1.0) * 2
             );
-            this.nextSpawnInterval = Math.max(this.nextSpawnInterval, 30); // 最小値を設定
+            this.nextSpawnInterval = Math.max(
+                40,
+                Math.floor(baseInterval * (1.0 - difficultyFactor * 0.3))
+            );
         }
 
-        // 各プラットフォームの更新
-        this.platforms.forEach((p) => p.update());
+        // 難易度を更新
+        this.updateDifficulty();
+
+        // プラットフォームの最適化された更新
+        // 画面に近い足場のみ更新処理を行う
+        const margin = window.width * 0.5; // 画面幅の半分の余裕を持たせる
+        for (let i = 0; i < this.platforms.length; i++) {
+            const platform = this.platforms[i];
+
+            // 画面の範囲から大きく離れた足場は更新を省略
+            if (platform.x > window.width + margin) {
+                // 画面から遠く離れた足場は概算で位置を更新（精密な更新は不要）
+                platform.x -= platform.speed;
+                continue;
+            }
+
+            // 画面内または近い足場は通常通り更新
+            platform.update();
+        }
 
         // 画面外のプラットフォームを削除
         this.cleanupPlatforms();
+    }
+    /**
+     * 外部からの難易度設定を受け取るメソッド
+     * @param {number} difficultyValue - 0.0～1.0の難易度値
+     */
+    setDifficulty(difficultyValue) {
+        // 有効範囲内の値に制限
+        const validDifficulty = Math.max(0.0, Math.min(1.0, difficultyValue));
+        // 前回の難易度から緩やかに変化させる（急激な難易度変化を防止）
+        this.difficultyFactor =
+            this.difficultyFactor * 0.95 + validDifficulty * 0.05;
+
+        // プラットフォームのスピードを難易度に応じて調整
+        const baseSpeed = PLATFORM_SPEED;
+        const maxSpeedIncrease = 1.5; // 最大で1.5倍まで速くなる
+        const currentSpeedFactor =
+            1.0 + this.difficultyFactor * maxSpeedIncrease;
+
+        // すべてのプラットフォームの速度を更新
+        for (let i = 0; i < this.platforms.length; i++) {
+            const platform = this.platforms[i];
+            platform.speed = baseSpeed * currentSpeedFactor;
+        }
+
+        if (window.debugMode) {
+            console.log(
+                `難易度更新: ${this.difficultyFactor.toFixed(
+                    2
+                )}, 速度係数: ${currentSpeedFactor.toFixed(2)}`
+            );
+        }
     }
 
     /**
      * 難易度を更新する
      */
     updateDifficulty() {
-        // 30秒（1800フレーム）ごとに難易度を0.1増加
-        this.difficultyFactor = 1.0 + (this.gameTime / 1800) * 0.2;
+        // 難易度上昇を緩やかに - 60秒（3600フレーム）ごとに難易度を0.1増加
+        this.difficultyFactor = 1.0 + (this.gameTime / 3600) * 0.15;
 
-        // 最大難易度を2.0に制限（通常の2倍の速さ）
-        this.difficultyFactor = Math.min(this.difficultyFactor, 2.0);
+        // ゲーム序盤は難易度を下げる（開始から30秒間）
+        if (this.gameTime < 1800) {
+            // 徐々に1.0まで上昇
+            this.difficultyFactor = Math.max(0.8, this.difficultyFactor); // 最低0.8から
+        }
+
+        // 最大難易度を1.6に制限（通常の1.6倍の速さに抑える）
+        this.difficultyFactor = Math.min(this.difficultyFactor, 1.6);
 
         // 難易度に応じてプラットフォームの速度を調整
         this.platforms.forEach((p) => {
@@ -189,13 +258,13 @@ export class StageGenerator {
      */
     generateNewPlatform() {
         // 難易度に応じて足場の幅を調整
-        // 難易度が上がると、狭い足場が出現しやすくなる
-        const minWidth = PLATFORM_MIN_WIDTH - (this.difficultyFactor - 1) * 10;
-        const finalMinWidth = Math.max(minWidth, 70); // 最小幅の下限を設定
+        // 難易度が上がると、狭い足場が出現しやすくなるが、最低幅は十分に確保する
+        const minWidth = PLATFORM_MIN_WIDTH - (this.difficultyFactor - 1) * 8; // 難易度による減少を緩和
+        const finalMinWidth = Math.max(minWidth, 90); // 最小幅の下限を増加して着地しやすく
 
-        // ゲーム序盤は広めの足場にする（初心者に優しく）
-        const widthBonus = Math.max(0, 1000 - this.gameTime) / 20;
-        const adjustedMaxWidth = Math.min(PLATFORM_MAX_WIDTH + widthBonus, 220);
+        // ゲーム序盤はさらに広めの足場にする（初心者に優しく）
+        const widthBonus = Math.max(0, 2000 - this.gameTime) / 15; // 効果時間を2倍に延長、効果も強化
+        const adjustedMaxWidth = Math.min(PLATFORM_MAX_WIDTH + widthBonus, 250); // 最大幅も増加
 
         // 足場の幅をランダム生成
         const width = window.random(finalMinWidth, adjustedMaxWidth);
@@ -206,17 +275,15 @@ export class StageGenerator {
         // 水平方向の距離を計算（難易度と経過時間に応じて調整）
         // ゲーム開始直後は足場を近くに生成し、徐々に難しくする
         const gameProgressFactor = Math.min(1.0, this.gameTime / 3000); // 基本の間隔（ゲーム進行で徐々に開いていく）
-        const baseGap = 40 + gameProgressFactor * 20; // 60から40に減らして間隔を狭く
-
-        // 難易度による間隔調整（難しいほど広くなる）
-        const diffGap = (this.difficultyFactor - 1) * 10; // 15から10に減らして増加幅を小さく
-
+        const baseGap = 40 + gameProgressFactor * 20; // 60から40に減らして間隔を狭く        // 難易度による間隔調整（難しいほど広くなる）
+        // 15から10に減らして増加幅を小さく
+        const diffGap = (this.difficultyFactor - 1) * 10;
         // 最終的な間隔の範囲を計算
-        const minGap = baseGap;
-        const maxGap = baseGap + diffGap + 15; // 20から15に減らして上限を下げる
+        const minGap = baseGap - 5; // 最小間隔をさらに縮小
+        const maxGap = baseGap + diffGap + 10; // 最大間隔も縮小
 
         // 間隔をランダム生成（上限を設ける）
-        const horizontalGap = window.random(minGap, Math.min(maxGap, 100)); // 130から100に減らして最大間隔を縮小
+        const horizontalGap = window.random(minGap, Math.min(maxGap, 90)); // 最大間隔をさらに縮小
 
         // X座標は画面の右端から適切な距離に配置
         const x = window.width + horizontalGap;
@@ -320,10 +387,9 @@ export class StageGenerator {
 
         // 最も到達しやすい位置（理想的な着地点）
         // 前の足場からやや下がった位置が最も着地しやすい
-        const optimalY = lastY + 30; // 上下の許容範囲（難易度によって変動）
-        // ジャンプ力の範囲を狭めて、より到達しやすい範囲に配置
-        const upwardRange = maxJumpHeight * 0.35 * difficultyFactor; // 0.5から0.35に減少
-        const downwardRange = maxJumpHeight * 0.15 * difficultyFactor; // 0.25から0.15に減少
+        const optimalY = lastY + 30; // 上下の許容範囲（難易度によって変動）        // ジャンプ力の範囲をさらに狭めて、より到達しやすい範囲に配置
+        const upwardRange = maxJumpHeight * 0.25 * difficultyFactor; // 0.35から0.25にさらに減少
+        const downwardRange = maxJumpHeight * 0.1 * difficultyFactor; // 0.15から0.10にさらに減少
 
         // 上下の限界を設定
         const upperLimit = Math.max(
@@ -337,12 +403,11 @@ export class StageGenerator {
 
         // 最終的な範囲（画面内に収める）
         let minY = Math.max(upperLimit, PLATFORM_MIN_HEIGHT);
-        let maxY = Math.min(lowerLimit, PLATFORM_MAX_HEIGHT);
-
-        // ほぼ平坦なコースにして簡単にする（ゲームの初期段階）
-        if (this.gameTime < 1000) {
+        let maxY = Math.min(lowerLimit, PLATFORM_MAX_HEIGHT); // ほぼ平坦なコースにして簡単にする（ゲームの初期段階）
+        if (this.gameTime < 3000) {
+            // 初期簡易期間を3倍に延長
             // ゲーム開始から一定時間は簡単に
-            const easierY = lastY + window.random(-10, 10);
+            const easierY = lastY + window.random(-8, 8); // 変化をさらに小さく
             return Math.max(
                 PLATFORM_MIN_HEIGHT,
                 Math.min(easierY, PLATFORM_MAX_HEIGHT)
@@ -365,13 +430,12 @@ export class StageGenerator {
         } // 増加する難易度に従って、ランダム性を調整
         // 難易度が低いときは「到達しやすい位置」に足場を配置する確率を高める
         const easyPlacementChance = Math.max(
-            0,
-            0.9 - (this.difficultyFactor - 1) * 0.25 // 0.8から0.9に増加、減少率も調整
+            0.2, // 最低でも20%の確率で簡単な配置にする
+            0.95 - (this.difficultyFactor - 1) * 0.2 // 初期確率を95%に引き上げ、減少率も緩和
         );
-
         if (window.random() < easyPlacementChance) {
             // 簡単な位置（前の足場とほぼ同じ高さ±少し）
-            return lastY + window.random(-10, 20); // 範囲を-15,25から-10,20に変更してより平坦に
+            return lastY + window.random(-8, 15); // 範囲をさらに狭めて、より平坦に
         }
 
         // それ以外は計算された範囲内でランダム配置
@@ -393,8 +457,29 @@ export class StageGenerator {
      * 画面外のプラットフォームを削除する
      */
     cleanupPlatforms() {
-        // 画面外に出た足場を削除
-        this.platforms = this.platforms.filter((p) => !p.isOffScreen());
+        // 最適化：画面外の足場を一括削除（先頭から連続する画面外プラットフォームのみ）
+        // これにより、配列の再構築コストを削減し、パフォーマンスを向上させる
+        if (this.platforms.length === 0) return;
+
+        // 最初のインデックスから連続して画面外になっているプラットフォームを数える
+        let offScreenCount = 0;
+        for (let i = 0; i < this.platforms.length; i++) {
+            if (this.platforms[i].isOffScreen()) {
+                offScreenCount++;
+            } else {
+                break; // 画面内のプラットフォームが見つかったら終了
+            }
+        }
+
+        // 画面外のプラットフォームがあれば削除（spliceを使用して一度に削除）
+        if (offScreenCount > 0) {
+            if (window.debugMode && offScreenCount > 1) {
+                console.log(
+                    `${offScreenCount}個の画面外プラットフォームを一括削除`
+                );
+            }
+            this.platforms.splice(0, offScreenCount);
+        }
     }
     /**
      * すべてのプラットフォームを描画する
@@ -514,9 +599,15 @@ export class StageGenerator {
     }
 
     /**
-     * プラットフォームの状態をリセットする
+     * ステージジェネレーターのリセット
+     * ゲームをリセットする際に呼び出される
      */
     reset() {
+        // 既存のsetup()メソッドを呼び出してリセット処理を行う
         this.setup();
+
+        if (window.debugMode) {
+            console.log('ステージジェネレーターをリセットしました');
+        }
     }
 }

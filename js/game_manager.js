@@ -14,6 +14,7 @@ import {
     FONT_SIZE_SCORE,
     GAME_OVER_MARGIN,
     PLAYER_SIZE,
+    PLATFORM_SPEED,
 } from './config.js';
 
 // ローカルストレージキー
@@ -57,17 +58,54 @@ export class GameManager {
         this.player.setup();
         this.stageGenerator.setup();
     }
-
     /**
      * ゲームの状態を更新する
      */ update() {
         if (this.state === GAME_STATE.PLAYING) {
-            this.stageGenerator.update();
-            // プレイヤー更新処理に足場の配列を渡す
-            this.player.update(this.stageGenerator.platforms); // キー入力状態を更新（スペースキーが離されたらフラグをリセット）
-            if (!window.keyIsDown(32)) {
+            // ゲームの進行度に基づく難易度調整をステージジェネレータに伝達
+            const progressFactor = Math.min(1.0, this.score / 10000);
+            const timeBasedDifficulty = Math.min(1.0, window.frameCount / 3600); // 60秒で最大難易度
+            const currentDifficulty = Math.max(
+                progressFactor,
+                timeBasedDifficulty
+            );
+
+            // ステージジェネレータに難易度情報を設定
+            // StageGeneratorクラスのdifficultyFactorを直接更新
+            this.stageGenerator.difficultyFactor =
+                this.stageGenerator.difficultyFactor * 0.95 +
+                currentDifficulty * 0.05;
+
+            // プラットフォームの速度を難易度に応じて調整
+            const baseSpeed = PLATFORM_SPEED;
+            const maxSpeedIncrease = 1.5; // 最大で1.5倍まで速くなる
+            const currentSpeedFactor =
+                1.0 + this.stageGenerator.difficultyFactor * maxSpeedIncrease;
+
+            // すべてのプラットフォームの速度を更新
+            for (let i = 0; i < this.stageGenerator.platforms.length; i++) {
+                const platform = this.stageGenerator.platforms[i];
+                platform.speed = baseSpeed * currentSpeedFactor;
+            }
+
+            this.stageGenerator.update(); // スペースキー押下状態をリアルタイムで検出（持続的ジャンプ効果のため）
+            const spaceIsPressed =
+                window.keyIsDown(32) || window.mouseIsPressed; // 32はスペースキーのキーコード
+
+            // キーが押されたばかりの状態を検出（新たなジャンプ開始のため）
+            if (spaceIsPressed && !this.spaceKeyPressed) {
+                console.log('入力検出：ジャンプ開始');
+                this.player.jump();
+                this.spaceKeyPressed = true;
+            }
+            // キーが離された状態を検出
+            else if (!spaceIsPressed && this.spaceKeyPressed) {
+                console.log('入力解除');
                 this.spaceKeyPressed = false;
             }
+
+            // プレイヤー更新（入力状態も渡す）
+            this.player.update(this.stageGenerator.platforms, spaceIsPressed);
 
             // ゲームオーバー判定
             if (this.isGameOver()) {
@@ -83,12 +121,41 @@ export class GameManager {
                     console.log('新しいハイスコア: ' + this.highScore);
                 }
             } else {
-                // 難易度係数に応じてスコアを増加（最低1、最大は難易度の2倍）
-                const difficultyBonus = Math.ceil(
-                    this.stageGenerator.difficultyFactor
-                );
-                this.score += difficultyBonus;
+                // 進行距離と難易度に基づいてスコアを更新
+                this.updateScore();
             }
+        }
+    }
+
+    /**
+     * スコアを更新する
+     * 進行距離と難易度に基づいてスコアを計算
+     */
+    updateScore() {
+        // 基本スコアは難易度係数に基づく
+        const difficultyBonus = Math.ceil(this.stageGenerator.difficultyFactor);
+
+        // 進行距離に基づいたボーナス（足場の速度に応じて進んだ距離として計算）
+        const distanceBonus = Math.floor(this.stageGenerator.gameTime / 60); // 1秒あたり1ポイント
+
+        // 実際の距離メートルを計算（表示用）
+        this.distanceMeters = Math.floor(
+            (this.stageGenerator.gameTime *
+                this.stageGenerator.difficultyFactor) /
+                12
+        );
+
+        // 合計スコアを更新
+        const addedScore = difficultyBonus;
+        this.score += addedScore;
+
+        // 一定間隔でスコアデバッグ情報を表示
+        if (window.debugMode && this.stageGenerator.gameTime % 60 === 0) {
+            console.log(
+                `スコア更新: ${this.score}, 距離: ${
+                    this.distanceMeters
+                }m, 難易度: ${this.stageGenerator.difficultyFactor.toFixed(2)}`
+            );
         }
     }
     /**
@@ -134,57 +201,95 @@ export class GameManager {
                 window.height / 2 + 50
             );
         } else if (this.state === GAME_STATE.PLAYING) {
-            // スコア表示
+            // スコア表示パネル背景（半透明）
+            window.push();
+            window.fill(0, 0, 0, 100);
+            window.noStroke();
+            window.rectMode(window.CORNER);
+            window.rect(window.width - 200, 5, 190, 110, 5);
+            window.pop(); // スコア表示 - 位置調整
             window.textSize(FONT_SIZE_SCORE);
             window.textAlign(window.RIGHT, window.TOP);
+            window.fill(COLOR_PALETTE.SCORE);
             window.text(`スコア: ${this.score}`, window.width - 20, 50);
+
+            // 距離表示
+            window.textSize(FONT_SIZE_SCORE - 2);
+            window.text(
+                `距離: ${this.distanceMeters || 0}m`,
+                window.width - 20,
+                80
+            );
 
             // ハイスコア表示
             window.fill(COLOR_PALETTE.HIGH_SCORE);
             window.text(`ハイスコア: ${this.highScore}`, window.width - 20, 20);
         } else if (this.state === GAME_STATE.GAME_OVER) {
-            window.text('ゲームオーバー', window.width / 2, window.height / 3);
+            // ゲームオーバー画面の半透明背景
+            window.push();
+            window.fill(0, 0, 0, 180);
+            window.noStroke();
+            window.rectMode(window.CENTER);
+            window.rect(window.width / 2, window.height / 2, 400, 250, 10);
+            window.pop(); // ゲームオーバーテキスト（明るい色で表示）- 位置を上に調整
+            window.fill(COLOR_PALETTE.HIGH_SCORE);
+            window.text(
+                'ゲームオーバー',
+                window.width / 2,
+                window.height / 3 + 20
+            );
+
+            // スコア表示（白色で表示）- 位置を上に調整
             window.textSize(FONT_SIZE_TEXT);
+            window.fill(COLOR_PALETTE.SCORE);
             window.text(
                 `スコア: ${this.score}`,
                 window.width / 2,
-                window.height / 2 - 20
+                window.height / 2 - 10
+            ); // 距離表示を追加（白色で表示）- 位置を上に調整
+            window.text(
+                `走行距離: ${this.distanceMeters || 0}m`,
+                window.width / 2,
+                window.height / 2 + 20
             );
 
-            // ハイスコア表示（新記録かどうかで色を変える）
+            // ハイスコア表示（新記録かどうかで色を変える）- 位置を上に調整
             if (this.isNewHighScore) {
                 window.fill(COLOR_PALETTE.HIGH_SCORE);
                 window.text(
-                    `ハイスコア: ${this.highScore} - 新記録!`,
+                    `ハイスコア: ${this.highScore}  新記録!`,
                     window.width / 2,
-                    window.height / 2 + 20
+                    window.height / 2 + 50
                 );
             } else {
+                window.fill(COLOR_PALETTE.SCORE);
                 window.text(
                     `ハイスコア: ${this.highScore}`,
                     window.width / 2,
-                    window.height / 2 + 20
+                    window.height / 2 + 50
                 );
             }
 
-            window.fill(COLOR_PALETTE.TEXT);
+            // リトライメッセージ（白色で表示して視認性を高める）- 位置を上に調整
+            window.fill(COLOR_PALETTE.SCORE);
             window.text(
                 'スペースキーまたはクリックでリトライ',
                 window.width / 2,
-                window.height / 2 + 70
+                window.height / 2 + 90
             );
         }
     }
     /**
      * キー入力処理
-     */
-    keyPressed() {
+     */ keyPressed() {
         if (this.state === GAME_STATE.START) {
             this.startGame();
         } else if (this.state === GAME_STATE.PLAYING) {
             // スペースキーが押された場合ジャンプ（連続入力防止）
+            // p5.jsの標準キーボード検出を使用
             if (window.keyCode === 32 && !this.spaceKeyPressed) {
                 // 32はスペースキーのキーコード
+                console.log('スペースキー検出: ジャンプ要求');
                 this.spaceKeyPressed = true; // キー状態をマーク
                 this.player.jump();
             }
@@ -200,18 +305,22 @@ export class GameManager {
         if (this.state === GAME_STATE.START) {
             this.startGame();
         } else if (this.state === GAME_STATE.PLAYING) {
-            this.player.jump();
+            console.log('マウスクリック検出: ジャンプ要求');
+            // 追加した専用のジャンプメソッドを呼び出す
+            if (this.player && typeof this.player.jump === 'function') {
+                this.player.jump();
+            }
         } else if (this.state === GAME_STATE.GAME_OVER) {
             this.resetGame();
         }
     }
-
     /**
      * キーが離された時の処理
      */
     keyReleased() {
         // スペースキーが離されたらフラグをリセット
-        if (window.keyCode === 32) {
+        if (window.key === ' ' || window.keyCode === 32) {
+            console.log('スペースキー解放');
             this.spaceKeyPressed = false;
         }
     }
@@ -242,13 +351,19 @@ export class GameManager {
             this.player.velocity = 0;
         }
     }
-
     /**
      * ゲームをリセットする
      */
     resetGame() {
         this.state = GAME_STATE.START;
+        this.score = 0;
+        this.distanceMeters = 0;
+        this.isNewHighScore = false;
         this.player.reset();
         this.stageGenerator.reset();
+
+        if (window.debugMode) {
+            console.log('ゲームをリセットしました');
+        }
     }
 }
