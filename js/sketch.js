@@ -608,10 +608,8 @@ function drawWithOptimization() {
     window.pop();
 
     // プレイヤーは常に画面内なので通常通り描画
-    window.gameManager.player.display();
-
-    // UI要素の描画
-    window.gameManager.drawUI();
+    window.gameManager.player.display();    // UI要素の描画
+    window.gameManager.draw();
 
     // デバッグ情報の描画（デバッグモードがONの場合のみ）
     if (window.debugMode) {
